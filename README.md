@@ -2,7 +2,12 @@
 
 Seven app-specific stdio MCP servers provide bounded read-only access for ChatGPT. Anime List keeps its app-owned Streamable HTTP MCP server, so all eight applications remain independently enableable and revocable.
 
-This directory is implementation-ready, not externally active. No migration has been applied, app deployed, token issued, tunnel created, or ChatGPT connection added by this work.
+The application-side implementation is deployed. The Calorie and Setline
+migrations are applied, and dedicated Reader, Anime List, and Calorie read
+credentials are stored through Fleet's existing secret boundary. External
+activation is still incomplete: Setline needs its first real owner sign-in
+before a token can be issued, and the eight OpenAI tunnels and ChatGPT
+connections still need their organization/workspace credentials and IDs.
 
 ## Local use
 
@@ -43,7 +48,10 @@ Secure MCP Tunnel is a persistent outbound client, not hosted storage. Dependabl
 
 ## Operator matrix
 
-`<tunnel-id>` is created later in OpenAI Platform tunnel settings. Profile creation, runtime API-key injection, migration application, deployment, and token issuance require explicit operator approval.
+`<tunnel-id>` is created later in OpenAI Platform tunnel settings. Profile
+creation and runtime API-key injection remain pending. Migration application,
+reviewed deployments, and three of four owner credential issuances were
+completed on 2026-08-11 under explicit operator approval.
 
 | Connection | Source and command | Doctor | Tools | Privacy / degraded mode | Revocation |
 | --- | --- | --- | --- | --- | --- |
@@ -84,9 +92,9 @@ Use the latest `tunnel-client` binary and settings-generated instructions. The o
 
 After app reviews and checks pass, activation is deliberately ordered:
 
-1. Approve and apply only the Calorie and Setline additive migrations, then deploy affected reviewed apps through their manual paths.
-2. Issue dedicated Reader, Anime List, Calorie, and Setline credentials; inject values through the existing secret boundary.
-3. Create eight tunnel IDs, associate each with the intended Platform organization and ChatGPT workspace, initialize one profile per connection, and run each doctor.
+1. Calorie and Setline additive migrations and reviewed application deployments are complete.
+2. Reader, Anime List, and Calorie credentials are issued through the existing secret boundary. Sign in to Setline once, then issue its dedicated credential.
+3. Provide the OpenAI tunnel admin/runtime credentials plus the intended Platform organization and ChatGPT workspace IDs; create eight tunnel IDs, initialize one profile per connection, and run each doctor.
 4. In ChatGPT Plugins, create one developer-mode app at a time using Tunnel as the connection.
 5. Run the retained evaluations in [evaluations.md](docs/evaluations.md), capture only sanitized results, and revoke/stop any connection that violates its boundary.
 
