@@ -1,0 +1,32 @@
+{
+  "name": "@fleet/chatgpt-connections",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only MCP adapters for selected Fleet applications",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "pnpm run build && pnpm run test",
+    "doctor": "pnpm run build && node dist/doctor.js",
+    "start:reader": "node dist/entrypoints/reader.js",
+    "start:starboard": "node dist/entrypoints/starboard.js",
+    "start:high-signal": "node dist/entrypoints/high-signal.js",
+    "start:calorie": "node dist/entrypoints/calorie.js",
+    "start:significant-hobbies": "node dist/entrypoints/significant-hobbies.js",
+    "start:research-papers": "node dist/entrypoints/research-papers.js",
+    "start:setline": "node dist/entrypoints/setline.js",
+    "test": "node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "25.6.0",
+    "typescript": "6.0.3"
+  },
+  "license": "UNLICENSED"
+}
