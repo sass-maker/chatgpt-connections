@@ -6,7 +6,7 @@ The local checks below preceded separately approved production activation work.
 
 | Surface | Validation | Result |
 | --- | --- | --- |
-| Shared stdio/Worker runtime | `pnpm check` | 57 tests passed; generated binding check and TypeScript build passed |
+| Shared stdio/Worker runtime | `pnpm check` | 60 tests passed; generated binding check and TypeScript build passed |
 | Reader | native tests, typecheck, and `pnpm check` | 93 tests and typecheck passed; 39 pre-existing Biome warnings remained non-fatal |
 | Starboard | tests, typecheck, and `pnpm check` | 43 files / 204 tests passed; typecheck and Biome passed |
 | High Signal API | API test suite | 19 files / 258 tests passed |
@@ -74,6 +74,11 @@ owner row, so a real user must sign in once before its owner-scoped token can be
 issued. Auth0 tenant signup, the standard hosted issuer, verified Google owner,
 CIMD, and resource-parameter compatibility are configured without a card. Four
 exact one-hour API audiences, read permissions, and default third-party user
-grants are configured. The shared Worker is not deployed and no
-ChatGPT app or retained ChatGPT evaluation has run. These remaining states are
-tracked separately in the active OpenSpec change.
+grants are configured. The shared Worker was released from clean, green `main`
+with exact SHA tags. Live verification passed Auth0 metadata/JWKS, the gateway
+metadata proxy, all four exact protected-resource documents, four anonymous
+initializations and four 401 private challenges. Representative Starboard, High
+Signal, Significant Hobbies, and Research Papers tool calls returned successful
+structured results without retaining record bodies. No ChatGPT app or retained
+ChatGPT evaluation has run; those remaining states are tracked separately in
+the active OpenSpec change.

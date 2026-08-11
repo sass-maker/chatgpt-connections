@@ -83,18 +83,18 @@ and every other hosted product must not be added to Codex.
 | Product | Source | Protocol | Auth/config | Client |
 | --- | --- | --- | --- | --- |
 | CodeVetter | Sidecar/database verified | STDIO implementation ready | In-app repository consent pending | Codex registration pending |
-| Reader | Owner API ready | Worker route and Auth0 JWT tests ready | Auth0 API/grant ready; Worker secrets pending | ChatGPT app pending |
-| Calorie | Owner API ready | Worker route and Auth0 JWT tests ready | Auth0 API/grant ready; Worker secrets pending | ChatGPT app pending |
-| Setline | API projection ready | Worker route and Auth0 JWT tests ready | Auth0 API/grant ready; owner account/token pending | ChatGPT app pending |
-| Anime List | Native production MCP verified | Fixed Auth0-authorized proxy and tests ready | Auth0 API/grant ready; Worker secret pending | ChatGPT app pending |
-| Starboard | Public API ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
-| High Signal | Public surface ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
-| Significant Hobbies | Hobbies, experiences, and public timelines live; production timestamp fix verified | Anonymous Worker route and tests ready | No auth | Gateway deployment and ChatGPT app pending |
-| Research Papers | Public exports ready | Export-only Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
+| Reader | Owner API ready | Live Worker route; OAuth metadata verified | Auth0 API/grant and Worker secrets ready | ChatGPT app pending |
+| Calorie | Owner API ready | Live Worker route; OAuth metadata verified | Auth0 API/grant and Worker secrets ready | ChatGPT app pending |
+| Setline | API projection ready | Live Worker route; OAuth metadata verified | Auth0 API/grant ready; owner account/token pending, route fails closed | ChatGPT app deferred |
+| Anime List | Native production MCP verified | Live fixed Auth0-authorized proxy | Auth0 API/grant and Worker secret ready | ChatGPT app pending |
+| Starboard | Public API ready | Live anonymous Worker route and tool call verified | No auth | ChatGPT app pending |
+| High Signal | Public surface ready | Live anonymous Worker route and tool call verified | No auth | ChatGPT app pending |
+| Significant Hobbies | Hobbies, experiences, and public timelines live; production timestamp fix verified | Live anonymous Worker route and tool call verified | No auth | ChatGPT app pending |
+| Research Papers | Public exports ready | Live export-only Worker route and tool call verified | No auth | ChatGPT app pending |
 
-No OAuth KV is required. The Auth0 tenant and exact resource APIs exist; the
-Worker deployment, production secrets, and ChatGPT web registrations do not. The
-implementation must not be reported as active until those gates pass.
+No OAuth KV is required. The Auth0 tenant, exact resource APIs, and shared
+Worker are active. ChatGPT web registrations and retained ChatGPT evaluations
+remain pending; Setline also waits for its first owner account/token.
 
 ## Development and verification
 
