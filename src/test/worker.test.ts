@@ -210,6 +210,24 @@ test("OAuth grants are bound to one exact product, scope, and resource", async (
   assert.deepEqual([wrongProduct.status, wrongScope.status, wrongResource.status], [401, 401, 401]);
 });
 
+test("an unavailable private product credential fails closed before upstream", async () => {
+  let called = false;
+  const response = await handleHostedRequest(
+    requestFor("/setline/mcp", initializeRequest()),
+    async () => {
+      called = true;
+      return Response.json({ items: [] });
+    },
+    { ...authorizationFor("/setline/mcp"), productToken: undefined },
+  );
+
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("retry-after"), "300");
+  assert.equal(called, false);
+  assert.match(JSON.stringify(await json(response)), /temporarily unavailable/u);
+});
+
 test("private product secrets remain isolated under concurrent OAuth calls", async () => {
   const seen: Array<{ authorization: string | null; url: string }> = [];
   const fetchImpl: typeof fetch = async (input, init) => {

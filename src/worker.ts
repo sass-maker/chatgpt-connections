@@ -20,13 +20,22 @@ class ResponseTooLargeError extends Error {}
 
 interface HostedRequestAuthorization {
   grant: OAuthGrantProps;
-  productToken: string;
+  productToken: string | undefined;
 }
 
 function jsonRpcError(status: number, code: number, message: string, headers?: HeadersInit): Response {
   return Response.json(
     { jsonrpc: "2.0", error: { code, message }, id: null },
     { status, headers: { "Content-Type": "application/json", ...headers } },
+  );
+}
+
+function productUnavailable(): Response {
+  return jsonRpcError(
+    503,
+    -32000,
+    "This product connection is temporarily unavailable.",
+    { "Retry-After": "300" },
   );
 }
 
@@ -229,7 +238,7 @@ function oauthChallenge(request: Request, route: HostedRouteDefinition): Respons
   });
 }
 
-function validProductToken(route: HostedRouteDefinition, value: string): boolean {
+function validProductToken(route: HostedRouteDefinition, value: string | undefined): boolean {
   if (!value || value.length > MAX_PRODUCT_TOKEN_BYTES) return false;
   if (route.kind === "native") return value.startsWith("anime_list_");
   return !route.app.tokenPrefix || value.startsWith(route.app.tokenPrefix);
@@ -317,9 +326,10 @@ export async function handleHostedRequest(
         route,
       );
     }
-  } else if (!authorizationMatches(request, route, authorization) ||
-      !validProductToken(route, authorization.productToken)) {
+  } else if (!authorizationMatches(request, route, authorization)) {
     return withProtocolHeaders(oauthChallenge(request, route), request, route);
+  } else if (!validProductToken(route, authorization.productToken)) {
+    return withProtocolHeaders(productUnavailable(), request, route);
   }
 
   try {
@@ -357,7 +367,7 @@ export async function handleHostedRequest(
   }
 }
 
-export function productToken(env: HostedWorkerEnv, route: HostedRouteDefinition): string {
+export function productToken(env: HostedWorkerEnv, route: HostedRouteDefinition): string | undefined {
   switch (route.tokenSecret) {
     case "READER_MCP_TOKEN": return env.READER_MCP_TOKEN;
     case "CALORIE_MCP_TOKEN": return env.CALORIE_MCP_TOKEN;
