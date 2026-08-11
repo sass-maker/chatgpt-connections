@@ -42,6 +42,12 @@ PUBLIC projection. Production re-verification remains deployment-gated.
 
 Additional executable boundary coverage includes fixed-operation GET allowlists, owner-token hashing and revocation, owner-scoped query binding, mutation absence, pagination and date bounds, explicit missing days, public-only timeline visibility, fallback labeling and filtering, retry/rate-limit behavior, timeout classification, streaming byte bounds, malformed upstream data, secret-field sanitization, browser-cookie/JWT rejection, and excluded-domain source checks. Anonymous live probes also verified the current Starboard catalog, High Signal signals/brief/public hit-rate dataset, and Research Papers hot/sleeper exports without retaining record bodies.
 
+Anime List's native production MCP advertised ten tools with read-only and
+non-destructive annotations. A bounded anonymous catalog call succeeded, while
+the owner watchlist call returned a structured tool error with no bearer and
+with an invalid bearer. Only status, tool names, annotations, and result-shape
+flags were retained; no catalog or watchlist record body was retained.
+
 ## Production activation receipt
 
 Application-side activation completed on 2026-08-11:
