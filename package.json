@@ -9,7 +9,11 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check": "pnpm run build && pnpm run test",
+    "check": "pnpm run types:check && pnpm run build && pnpm run test",
+    "types:worker": "wrangler types --include-runtime false",
+    "types:check": "wrangler types --include-runtime false --check",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy --tag \"$(git rev-parse HEAD)\"",
     "doctor": "pnpm run build && node dist/doctor.js",
     "start:reader": "node dist/entrypoints/reader.js",
     "start:starboard": "node dist/entrypoints/starboard.js",
@@ -21,12 +25,15 @@
     "test": "node --test dist/test/*.test.js"
   },
   "dependencies": {
+    "@cloudflare/workers-oauth-provider": "0.10.3",
     "@modelcontextprotocol/sdk": "1.29.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20260811.1",
     "@types/node": "25.6.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "wrangler": "4.120.1"
   },
   "license": "UNLICENSED"
 }

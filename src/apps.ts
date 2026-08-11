@@ -50,6 +50,7 @@ export interface AppDefinition {
       path: (args: Record<string, unknown>) => string;
       auth?: boolean;
       baseUrl?: string;
+      mode?: string;
       fallback?: {
         baseUrl: string;
         path: (args: Record<string, unknown>) => string;

@@ -5,6 +5,7 @@ export interface ReadOperation<Args extends Record<string, unknown>> {
   path: (args: Args) => string;
   auth?: boolean;
   baseUrl?: string;
+  mode?: string;
   fallback?: {
     baseUrl: string;
     path: (args: Args) => string;
@@ -151,7 +152,11 @@ export class ReadClient<Operations extends Record<string, ReadOperation<Record<s
     }
 
     try {
-      return { ...(await this.#read(operation, url)), sourceUrl: url.toString() };
+      return {
+        ...(await this.#read(operation, url)),
+        sourceUrl: url.toString(),
+        ...(operation.mode ? { retrievalMode: operation.mode } : {}),
+      };
     } catch (error) {
       const mapped = asConnectionError(error);
       if (!operation.fallback || !mapped.retryable) throw mapped;

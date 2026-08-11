@@ -1,103 +1,135 @@
-# Fleet ChatGPT connections
+# Fleet MCP connections
 
-Seven app-specific stdio MCP servers provide bounded read-only access for ChatGPT. Anime List keeps its app-owned Streamable HTTP MCP server, so all eight applications remain independently enableable and revocable.
+Fleet routes read-only data according to its existing storage boundary:
 
-The application-side implementation is deployed. The Calorie and Setline
-migrations are applied, and dedicated Reader, Anime List, and Calorie read
-credentials are stored through Fleet's existing secret boundary. External
-activation is still incomplete: Setline needs its first real owner sign-in
-before a token can be issued, and the eight OpenAI tunnels and ChatGPT
-connections still need their organization/workspace credentials and IDs.
+- CodeVetter stays local and is available only to Codex through its installed
+  repository-scoped STDIO sidecar.
+- Cloud-backed products are independent ChatGPT web apps backed by fixed
+  Streamable HTTP routes on one Cloudflare Worker.
+- Private hosted routes use owner-only OAuth 2.1 through Cloudflare Access.
+  ChatGPT receives an MCP access token, never an application's PAT.
+- Public hosted routes are anonymous and can read only approved public APIs or
+  exports.
 
-## Local use
+Secure MCP Tunnel is not required for this phase. Indulge and other device-only
+products remain deferred until they have an approved cloud data boundary.
 
-Install and verify from this directory:
+## Hosted routes
+
+The production origin is assigned only after the manual deployment gate. Each
+path is registered as a separate ChatGPT developer-mode app.
+
+| Product | Path | ChatGPT auth | Upstream boundary |
+| --- | --- | --- | --- |
+| Reader | `/reader/mcp` | OAuth, `reader.read` | Existing owner read API using `READER_MCP_TOKEN` in the Worker |
+| Calorie | `/calorie/mcp` | OAuth, `calorie.read` | Existing owner nutrition API using `CALORIE_MCP_TOKEN` |
+| Setline | `/setline/mcp` | OAuth, `setline.read` | Existing owner training API using `SETLINE_MCP_TOKEN`; activation waits for a real owner sign-in |
+| Anime List | `/anime-list/mcp` | OAuth, `anime-list.read` | Fixed proxy to `https://anime.significanthobbies.com/api/mcp` using `ANIME_LIST_MCP_TOKEN` |
+| Starboard | `/starboard/mcp` | None | Approved anonymous product APIs |
+| High Signal | `/high-signal/mcp` | None | Published signal, brief, and track-record data |
+| Significant Hobbies | `/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
+| Research Papers | `/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
+
+Research Papers' local corpus search, detail, similarity, RAG, PDFs, and ingest
+are not hosted. Significant Hobbies private records are not hosted.
+
+## OAuth and secret boundary
+
+`@cloudflare/workers-oauth-provider` owns MCP client metadata, authorization
+codes, scoped access/refresh tokens, rotation, revocation, resource audiences,
+and discovery. Its dedicated `OAUTH_KV` namespace may store only protocol state
+and grants. Product or general user records do not belong there.
+
+Cloudflare Access is the upstream identity provider. The authorization handler
+requires exact issuer and Access client audience, a valid signature and time
+window, matching nonce, and the allowlisted `OWNER_EMAIL`. The grant is bound to
+one exact route and one product read scope. The protected handler then selects
+one matching Worker secret by a fixed switch. OAuth bearer values, Access
+tokens, product tokens, cookies, and private response bodies are not logged or
+cached.
+
+Required Worker secret names (values stay outside git):
+
+- `ACCESS_AUTHORIZATION_URL`
+- `ACCESS_CLIENT_ID`
+- `ACCESS_CLIENT_SECRET`
+- `ACCESS_ISSUER`
+- `ACCESS_JWKS_URL`
+- `ACCESS_TOKEN_URL`
+- `COOKIE_ENCRYPTION_KEY`
+- `OWNER_EMAIL`
+- `READER_MCP_TOKEN`
+- `CALORIE_MCP_TOKEN`
+- `SETLINE_MCP_TOKEN`
+- `ANIME_LIST_MCP_TOKEN`
+
+## Local CodeVetter
+
+CodeVetter is the only Codex connection in this scope. Enable each repository
+inside CodeVetter at **Settings → Agent MCP**, then add the exact generated
+command, database path, and opaque repository ID to Codex under a stable unique
+name. Do not insert or enable repository scopes directly in SQLite.
+
+On the current host, the installed sidecar and database are present,
+`knowledge-base` is indexed only partially, and no repository MCP scope is
+enabled. CodeVetter activation therefore remains consent-pending. Anime List
+and every other hosted product must not be added to Codex.
+
+## Readiness matrix
+
+| Product | Source | Protocol | Auth/config | Client |
+| --- | --- | --- | --- | --- |
+| CodeVetter | Sidecar/database verified | STDIO implementation ready | In-app repository consent pending | Codex registration pending |
+| Reader | Owner API ready | Worker route and tests ready | Live Access app and Worker secrets pending | ChatGPT app pending |
+| Calorie | Owner API ready | Worker route and tests ready | Live Access app and Worker secrets pending | ChatGPT app pending |
+| Setline | API projection ready | Worker route and tests ready | Owner account/token plus live Access config pending | ChatGPT app pending |
+| Anime List | Native production MCP verified | Fixed OAuth proxy and tests ready | Live Access app and Worker secret pending | ChatGPT app pending |
+| Starboard | Public API ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
+| High Signal | Public surface ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
+| Significant Hobbies | Public projection ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
+| Research Papers | Public exports ready | Export-only Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
+
+The OAuth KV namespace exists, but the Worker, Access for SaaS OIDC app,
+production secrets, deployment, and ChatGPT web registrations do not yet exist.
+The implementation must not be reported as active until those gates pass.
+
+## Development and verification
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm check
+pnpm exec wrangler deploy --dry-run
+pnpm exec wrangler dev
+```
+
+STDIO entrypoints remain for source diagnostics and rollback, but are not
+registered in Codex:
+
+```bash
 pnpm doctor -- reader
 pnpm start:reader
 ```
 
-Owner credentials are process-only environment variables. Never place their values in this repository, command history, test snapshots, or support output.
+Generated binding types come from `wrangler types`; rerun
+`pnpm types:worker` after changing `wrangler.jsonc`.
 
-| Connection | Base override | Credential variable |
-| --- | --- | --- |
-| Reader | `READER_API_URL` | `READER_MCP_TOKEN` (`rdr_*`) |
-| Starboard | `STARBOARD_API_URL` | none |
-| High Signal | `HIGH_SIGNAL_API_URL` | none |
-| Calorie | `CALORIE_API_URL` | `CALORIE_MCP_TOKEN` (`calorie_read_*`) |
-| Significant Hobbies | `SIGNIFICANT_HOBBIES_API_URL` | none |
-| Research Papers | `RESEARCH_PAPERS_API_URL` | none; defaults to local FastAPI |
-| Setline | `SETLINE_API_URL` | `SETLINE_MCP_TOKEN` (`setline_read_*`) |
+## Activation and revocation
 
-Remote base overrides must use HTTPS; `http://localhost` and `http://127.0.0.1` are allowed for local services. The runtime never accepts an origin, method, path, headers, request body, or SQL from a tool caller.
+1. Create an owner-only Cloudflare Access for SaaS OIDC app with the Worker
+   callback `/oauth/callback` and record its endpoints as Worker secrets.
+2. Add product secrets without exposing their values, run the Fleet deployment
+   guard, and deploy the exact reviewed Git SHA through the manual path.
+3. Verify product-scoped OAuth discovery/consent/revocation and anonymous
+   production probes without retaining private bodies.
+4. Add one ChatGPT developer-mode app per ready hosted route. OAuth routes use
+   OAuth; public routes use No Authentication.
+5. Enable CodeVetter repositories in its own UI and register only those
+   generated configs in Codex.
 
-## Daily availability and freshness
+Disabling one ChatGPT app, revoking one OAuth grant, or revoking one product
+read token affects only that product. CodeVetter revocation uses its in-app
+Disable action and removal of its Codex entry. No rollback deletes application
+or repository data.
 
-The adapters read their upstream on every tool call; they do not maintain a second Fleet data store. “Live” therefore means the newest data currently exposed by the owning application:
-
-| Source class | Connections | Freshness behavior |
-| --- | --- | --- |
-| Owner application API | Reader, Calorie, Anime List watchlists, Setline | Reads current owner-scoped application data after the owning deployment and token issuance. |
-| Public application API/export | Starboard, High Signal, Anime List catalog, Significant Hobbies | Reads the currently published product surface; any product-side cache headers still apply. |
-| Operator-local corpus | Research Papers search/detail/similar/hot/sleepers | Reads the current local ClickHouse corpus while ClickHouse and FastAPI are running. Hot/sleepers alone may fall back to freshness-labelled public exports. |
-
-Secure MCP Tunnel is a persistent outbound client, not hosted storage. Dependable daily access requires all eight tunnel profiles to run on an awake, always-online designated host. That host must also keep Research Papers ClickHouse and FastAPI healthy for full corpus access. A sleeping laptop or stopped tunnel makes that connection temporarily unavailable; it never broadens access or falls back to a different private source. Run the app doctor and `tunnel-client doctor --profile <profile> --explain` after host restarts and before relying on the connection.
-
-## Operator matrix
-
-`<tunnel-id>` is created later in OpenAI Platform tunnel settings. Profile
-creation and runtime API-key injection remain pending. Migration application,
-reviewed deployments, and three of four owner credential issuances were
-completed on 2026-08-11 under explicit operator approval.
-
-| Connection | Source and command | Doctor | Tools | Privacy / degraded mode | Revocation |
-| --- | --- | --- | --- | --- | --- |
-| Reader | `pnpm start:reader` → owner Reader MCP routes | `pnpm doctor -- reader`; `tunnel-client doctor --profile fleet-reader --explain` | search, detail, collections | Owner library only; no PDF download/chat. Fails closed without `rdr_*`. | Revoke the dedicated Reader key and stop/remove `fleet-reader`. |
-| Starboard | `pnpm start:starboard` → public APIs | `pnpm doctor -- starboard`; tunnel doctor for `fleet-starboard` | repository search/detail/preview, tool adoption | Public catalog only; no saved projects, discussions, jobs, or private repos. | Stop/remove `fleet-starboard`. |
-| High Signal | `pnpm start:high-signal` → published site data | `pnpm doctor -- high-signal`; tunnel doctor for `fleet-high-signal` | signals, Daily Brief, track record | Published data only; no owner/admin/ingest/delivery routes. | Stop/remove `fleet-high-signal`. |
-| Calorie | `pnpm start:calorie` → narrow owner routes | `pnpm doctor -- calorie`; tunnel doctor for `fleet-calorie` | daily nutrition, history, foods, cycles | No medications, weight records, profile identity, or writes. Fails closed without its read token. | Revoke the Calorie read token and stop/remove `fleet-calorie`. |
-| Anime List | native `https://anime.significanthobbies.com/api/mcp` | app MCP/PAT tests; tunnel doctor for `fleet-anime-list` | existing 6 catalog + 4 watchlist tools | Catalog is public; watchlists require an `anime_list_*` PAT. Cookies/JWTs rejected. | Revoke the PAT and stop/remove `fleet-anime-list`. |
-| Significant Hobbies | `pnpm start:significant-hobbies` → corpus/PUBLIC timelines | `pnpm doctor -- significant-hobbies`; tunnel doctor for `fleet-significant-hobbies` | hobbies, experiences, PUBLIC timelines | Daily, journals, habits, Trajectory, commitments, bucket lists, accounts, private/unlisted timelines, and device data are unaddressable. | Stop/remove `fleet-significant-hobbies`. |
-| Research Papers | `pnpm start:research-papers` → local FastAPI plus approved static files | `pnpm doctor -- research-papers`; tunnel doctor for `fleet-research-papers` | search/detail/similar/hot/sleepers/reading path | No RAG/paid answer, ingest, ClickHouse access, PDF redistribution, or operator tools. Hot/sleepers alone may use labeled public-static fallback. | Stop/remove `fleet-research-papers`. |
-| Setline | `pnpm start:setline` → narrow owner projections | `pnpm doctor -- setline`; tunnel doctor for `fleet-setline` | programme/templates/history/session/progress | No active execution, coaching, recommendations, sync write, import, account, or whole-state tool. | Revoke the Setline read token and stop/remove `fleet-setline`. |
-
-Each stdio profile uses the same shape, with the appropriate start script:
-
-```bash
-tunnel-client init \
-  --sample sample_mcp_stdio_local \
-  --profile fleet-reader \
-  --tunnel-id <tunnel-id> \
-  --mcp-command "pnpm --dir /Users/sarthak/Desktop/fleet/foundry/helpers/chatgpt-connections start:reader"
-
-tunnel-client doctor --profile fleet-reader --explain
-tunnel-client run --profile fleet-reader
-```
-
-Anime List uses the HTTP form:
-
-```bash
-tunnel-client init \
-  --profile fleet-anime-list \
-  --tunnel-id <tunnel-id> \
-  --mcp-server-url https://anime.significanthobbies.com/api/mcp
-```
-
-Use the latest `tunnel-client` binary and settings-generated instructions. The official OpenAI documentation describes the tunnel as outbound-only, supports stdio or HTTP MCP servers, and requires the client to remain healthy while ChatGPT discovers and calls tools: <https://developers.openai.com/api/docs/guides/secure-mcp-tunnels>.
-
-## Activation gate
-
-After app reviews and checks pass, activation is deliberately ordered:
-
-1. Calorie and Setline additive migrations and reviewed application deployments are complete.
-2. Reader, Anime List, and Calorie credentials are issued through the existing secret boundary. Sign in to Setline once, then issue its dedicated credential.
-3. Provide the OpenAI tunnel admin/runtime credentials plus the intended Platform organization and ChatGPT workspace IDs; create eight tunnel IDs, initialize one profile per connection, and run each doctor.
-4. In ChatGPT Plugins, create one developer-mode app at a time using Tunnel as the connection.
-5. Run the retained evaluations in [evaluations.md](docs/evaluations.md), capture only sanitized results, and revoke/stop any connection that violates its boundary.
-
-The OpenAI tunnel permission and ChatGPT developer-mode permission are separate. Current official setup details are in the [Secure MCP Tunnel guide](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).
-
-Sanitized local evidence is retained in [validation-results.md](docs/validation-results.md) and [inspector-results.md](docs/inspector-results.md).
+Retained evaluation prompts remain in [evaluations.md](docs/evaluations.md).
+Runtime decisions are in [runtime-compatibility.md](docs/runtime-compatibility.md).

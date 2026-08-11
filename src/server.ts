@@ -27,14 +27,33 @@ function failure(app: AppDefinition, tool: string, error: unknown): ToolResult {
   };
 }
 
-export function buildServer(appId: AppId, fetchImpl?: typeof fetch): McpServer {
-  const app = APP_DEFINITIONS[appId];
-  const token = app.tokenEnv ? process.env[app.tokenEnv]?.trim() : undefined;
+export interface ServerBuildOptions {
+  fetchImpl?: typeof fetch;
+  token?: string;
+  baseUrl?: string;
+  readProcessEnvironment?: boolean;
+  securitySchemes?: readonly ToolSecurityScheme[];
+}
+
+export type ToolSecurityScheme =
+  | { type: "noauth" }
+  | { type: "oauth2"; scopes: readonly string[] };
+
+export function buildServerForApp(
+  app: AppDefinition,
+  options: ServerBuildOptions = {},
+): McpServer {
+  const readProcessEnvironment = options.readProcessEnvironment ?? true;
+  const environmentToken =
+    readProcessEnvironment && app.tokenEnv ? process.env[app.tokenEnv]?.trim() : undefined;
+  const environmentBaseUrl =
+    readProcessEnvironment ? process.env[app.baseUrlEnv]?.trim() : undefined;
+  const token = options.token?.trim() || environmentToken;
   const client = new ReadClient(app.operations, {
-    baseUrl: process.env[app.baseUrlEnv]?.trim() || app.baseUrl,
+    baseUrl: options.baseUrl?.trim() || environmentBaseUrl || app.baseUrl,
     ...(token ? { token } : {}),
     ...(app.tokenPrefix ? { tokenPrefix: app.tokenPrefix } : {}),
-    ...(fetchImpl ? { fetchImpl } : {}),
+    ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
   });
   const server = new McpServer(
     { name: app.serverName, version: "0.1.0" },
@@ -54,6 +73,9 @@ export function buildServer(appId: AppId, fetchImpl?: typeof fetch): McpServer {
           destructiveHint: false,
           idempotentHint: true,
           openWorldHint: tool.mode !== "owner-api",
+        },
+        _meta: {
+          securitySchemes: options.securitySchemes ?? [{ type: "noauth" }],
         },
       },
       async (rawArgs) => {
@@ -97,6 +119,12 @@ export function buildServer(appId: AppId, fetchImpl?: typeof fetch): McpServer {
   }
 
   return server;
+}
+
+export function buildServer(appId: AppId, fetchImpl?: typeof fetch): McpServer {
+  return buildServerForApp(APP_DEFINITIONS[appId], {
+    ...(fetchImpl ? { fetchImpl } : {}),
+  });
 }
 
 export async function runServer(appId: AppId): Promise<void> {
