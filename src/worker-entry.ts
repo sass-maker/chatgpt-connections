@@ -1,7 +1,7 @@
 import { hostedRoute } from "./hosted.js";
 import {
-  authorizeWorkosRequest,
-  handleWorkosMetadataRequest,
+  authorizeOAuthRequest,
+  handleOAuthMetadataRequest,
   type HostedWorkerEnv,
 } from "./oauth.js";
 import { handleHostedRequest, productToken } from "./worker.js";
@@ -27,13 +27,13 @@ function authorizationUnavailable(): Response {
 
 export default {
   async fetch(request: Request, env: HostedWorkerEnv): Promise<Response> {
-    const metadata = await handleWorkosMetadataRequest(request, env);
+    const metadata = await handleOAuthMetadataRequest(request, env);
     if (metadata) return metadata;
 
     const route = hostedRoute(new URL(request.url).pathname);
     if (!route || route.audience === "public") return handleHostedRequest(request);
 
-    const authorization = await authorizeWorkosRequest(request, route, env);
+    const authorization = await authorizeOAuthRequest(request, route, env);
     if (authorization.status === "unavailable" || authorization.status === "misconfigured") {
       return authorizationUnavailable();
     }

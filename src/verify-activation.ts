@@ -1,7 +1,7 @@
 import { ActivationVerificationError, verifyActivation } from "./activation.js";
 
 function usage(): string {
-  return "Usage: verify-activation --issuer https://tenant.authkit.app [--gateway https://mcp.example.com]";
+  return "Usage: verify-activation --issuer https://tenant.us.auth0.com/ [--gateway https://mcp.example.com]";
 }
 
 function argumentsFrom(argv: string[]): { issuer: string; gatewayOrigin?: string } {

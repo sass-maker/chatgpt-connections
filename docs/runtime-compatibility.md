@@ -13,11 +13,11 @@ Checked on 2026-08-11 before the hosted transport was added.
   for a production dependency upgrade.
 - The original hosted-personal revision used
   `@cloudflare/workers-oauth-provider` 0.10.3 and a custom Cloudflare Access
-  bridge. The WorkOS revision supersedes both: AuthKit and Connect own CIMD,
-  DCR compatibility, PKCE, consent, access/refresh tokens, rotation, and
+  bridge. The hosted-IdP revision supersedes both: Auth0 owns CIMD,
+  PKCE, consent, access/refresh tokens, rotation, and
   revocation outside the Worker.
-- The 2026-08-11 WorkOS cleanup gate replaced that provider with direct
-  `jose` 6.2.8. `jose` is the verifier in WorkOS's MCP documentation, is
+- The 2026-08-11 Auth0 cleanup gate replaced that provider with direct
+  `jose` 6.2.8. `jose` verifies Auth0's standards-based JWTs, is
   MIT-licensed, uses Web Crypto in Workers, and was already present through the
   pinned MCP SDK. Making it direct avoids depending on a transitive import and
   removes the Worker-owned OAuth/KV implementation.
@@ -25,7 +25,7 @@ Checked on 2026-08-11 before the hosted transport was added.
   local-smoke, and deployment tooling.
 - The audit's moderate `@hono/node-server` advisory remains visible. This
   helper does not import the Node/Hono static-file server path implicated by
-  that Windows-only advisory. The WorkOS dependency swap introduced no new
+  that Windows-only advisory. The Auth0 dependency swap introduced no new
   audit finding. Updating the MCP SDK remains a separate
   production-dependency decision.
 
@@ -40,31 +40,30 @@ Checked on 2026-08-11 before the hosted transport was added.
   session, request body, tool result, or mutable request state may enter module
   scope, a binding, a cache, or a log.
 - The Worker has no OAuth KV, authorization endpoint, token endpoint, callback,
-  client database, cookie encryption key, WorkOS API key, or WorkOS client
-  secret. WorkOS retains the OAuth protocol state; application data remains in
+  client database, cookie encryption key, Auth0 Management API token, or Auth0 client
+  secret. Auth0 retains the OAuth protocol state; application data remains in
   each product.
-- Private product tokens and the WorkOS hosted issuer/owner ID are separate
-  required Worker bindings. ChatGPT's WorkOS bearer token is validated and
+- Private product tokens and the Auth0 hosted issuer/owner ID are separate
+  required Worker bindings. ChatGPT's Auth0 bearer token is validated and
   never forwarded. A fixed product token is selected only after the product,
   permission, owner `sub`, and exact route audience match.
-- WorkOS access-token validation checks an RS256 signature through the hosted
-  JWKS, exact `*.authkit.app` issuer, exact route URL audience, expiry and
-  issued-at bounds, maximum one-hour lifetime, token/consent identifiers,
+- Auth0 access-token validation checks an RS256 signature through the hosted
+  JWKS, exact `*.auth0.com` issuer, exact route URL audience, expiry and
+  issued-at bounds, maximum one-hour lifetime,
   allowlisted owner user ID, and exact product read permission. Invalid tokens
   fail with an OAuth challenge; JWKS/config failures return a bounded 503 and
   never invoke an upstream product.
 - Protected-resource metadata is route-specific. The compatibility discovery
-  proxy fails closed unless WorkOS advertises CIMD, DCR, PKCE S256,
-  authorization-code and refresh-token grants, `offline_access`, and every
-  private product scope.
+  proxy fails closed unless Auth0 advertises CIMD, PKCE S256,
+  authorization-code and refresh-token grants, and `offline_access`.
 - The dependency-free activation verifier applies the same compatibility
-  contract to WorkOS's public metadata and JWKS before deployment, then to the
+  contract to Auth0's public metadata and JWKS before deployment, then to the
   gateway discovery proxy and four exact private resource documents after
   deployment. Its receipt names dashboard/live-grant gates that public metadata
   cannot prove instead of treating them as passed.
-- The WorkOS cost boundary is also fail-closed at activation: hosted AuthKit
-  domain only, below one million MAU, and no custom domain, enterprise SSO,
-  Directory Sync, Cross App Access, or other paid feature.
+- The Auth0 cost boundary is also fail-closed at activation: standard hosted
+  tenant domain only, free-plan limits, no custom domain or paid feature, CIMD
+  enabled, and open dynamic client registration disabled.
 - Only fixed product routes and allowlisted upstream GET operations are
   addressable. Anime List is a fixed POST-only native MCP proxy. Protocol
   request bodies and upstream responses remain bounded.
@@ -76,6 +75,6 @@ References:
 - <https://developers.cloudflare.com/workers/best-practices/workers-best-practices/>
 - <https://developers.cloudflare.com/agents/model-context-protocol/protocol/authorization/>
 - <https://developers.cloudflare.com/agents/model-context-protocol/guides/securing-mcp-server/>
-- <https://workos.com/docs/authkit/mcp>
+- <https://auth0.com/ai/docs/mcp>
 - <https://developers.openai.com/plugins/build/auth>
 - <https://github.com/modelcontextprotocol/typescript-sdk>

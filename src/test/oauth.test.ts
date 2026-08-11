@@ -11,20 +11,20 @@ import {
 
 import { PRIVATE_HOSTED_SCOPES, hostedRoute } from "../hosted.js";
 import {
-  authorizeWorkosRequest,
-  handleWorkosMetadataRequest,
-  verifyWorkosAccessToken,
-  workosIssuer,
+  auth0Issuer,
+  authorizeOAuthRequest,
+  handleOAuthMetadataRequest,
+  verifyAuth0AccessToken,
 } from "../oauth.js";
 
-const issuer = "https://fleet-test.authkit.app";
-const ownerId = "user_01OWNER123456";
+const issuer = "https://fleet-test.us.auth0.com/";
+const ownerId = "google-oauth2|owner123456";
 const resource = "https://mcp.example/reader/mcp";
 const scope = "reader.read";
 const route = hostedRoute("/reader/mcp")!;
 const env = {
-  WORKOS_AUTHKIT_DOMAIN: issuer,
-  WORKOS_OWNER_USER_ID: ownerId,
+  AUTH0_ISSUER: issuer,
+  AUTH0_OWNER_USER_ID: ownerId,
 };
 
 interface TokenOverrides {
@@ -33,7 +33,6 @@ interface TokenOverrides {
   issuedAt?: number;
   issuer?: string;
   permissions?: string[];
-  sid?: string | null;
   subject?: string;
 }
 
@@ -44,7 +43,7 @@ async function signingFixture(): Promise<{
   const { privateKey, publicKey } = await generateKeyPair("RS256");
   const publicJwk = await exportJWK(publicKey);
   publicJwk.alg = "RS256";
-  publicJwk.kid = "workos-key";
+  publicJwk.kid = "auth0-key";
   const getKey = createLocalJWKSet({ keys: [publicJwk] });
   return {
     getKey,
@@ -52,12 +51,10 @@ async function signingFixture(): Promise<{
       const now = Math.floor(Date.now() / 1000);
       const issuedAt = overrides.issuedAt ?? now;
       const payload: Record<string, unknown> = {
-        jti: "token_01EXAMPLE",
         permissions: overrides.permissions ?? [scope],
       };
-      if (overrides.sid !== null) payload.sid = overrides.sid ?? "app_consent_01EXAMPLE";
       return new SignJWT(payload)
-        .setProtectedHeader({ alg: "RS256", kid: "workos-key", typ: "JWT" })
+        .setProtectedHeader({ alg: "RS256", kid: "auth0-key", typ: "JWT" })
         .setIssuer(overrides.issuer ?? issuer)
         .setAudience(overrides.audience ?? resource)
         .setSubject(overrides.subject ?? ownerId)
@@ -68,23 +65,23 @@ async function signingFixture(): Promise<{
   };
 }
 
-test("WorkOS issuer accepts only the free hosted AuthKit domain", () => {
-  assert.equal(workosIssuer(env), issuer);
+test("Auth0 issuer accepts only the free hosted Auth0 tenant domain", () => {
+  assert.equal(auth0Issuer(env), issuer);
   for (const value of [
-    "http://fleet-test.authkit.app",
+    "http://fleet-test.us.auth0.com/",
     "https://auth.example.com",
-    "https://fleet-test.authkit.app/path",
-    "https://fleet-test.authkit.app:8443",
+    "https://fleet-test.us.auth0.com/path",
+    "https://fleet-test.us.auth0.com:8443/",
   ]) {
-    assert.throws(() => workosIssuer({ WORKOS_AUTHKIT_DOMAIN: value } as Pick<Env, "WORKOS_AUTHKIT_DOMAIN">));
+    assert.throws(() => auth0Issuer({ AUTH0_ISSUER: value } as Pick<Env, "AUTH0_ISSUER">));
   }
 });
 
-test("WorkOS JWT verification binds issuer, route audience, owner, lifetime, and permission", async () => {
+test("Auth0 JWT verification binds issuer, route audience, owner, lifetime, and permission", async () => {
   const fixture = await signingFixture();
   const validToken = await fixture.token();
   const request = new Request(resource, { headers: { Authorization: `Bearer ${validToken}` } });
-  const grant = await verifyWorkosAccessToken(validToken, request, route, env, fixture.getKey);
+  const grant = await verifyAuth0AccessToken(validToken, request, route, env, fixture.getKey);
   assert.deepEqual(grant, {
     ownerId,
     product: "reader",
@@ -95,35 +92,34 @@ test("WorkOS JWT verification binds issuer, route audience, owner, lifetime, and
   const now = Math.floor(Date.now() / 1000);
   for (const overrides of [
     { audience: "https://mcp.example/calorie/mcp" },
-    { issuer: "https://other.authkit.app" },
-    { subject: "user_01OTHER123456" },
+    { issuer: "https://other.us.auth0.com/" },
+    { subject: "google-oauth2|other123456" },
     { permissions: ["calorie.read"] },
     { expiresAt: now - 120 },
     { expiresAt: now + 7_200 },
-    { sid: null },
   ] satisfies TokenOverrides[]) {
     await assert.rejects(
-      verifyWorkosAccessToken(await fixture.token(overrides), request, route, env, fixture.getKey),
+      verifyAuth0AccessToken(await fixture.token(overrides), request, route, env, fixture.getKey),
     );
   }
 });
 
 test("authorization classification never accepts malformed or cross-product bearer tokens", async () => {
   const fixture = await signingFixture();
-  const missing = await authorizeWorkosRequest(new Request(resource), route, env, fixture.getKey);
-  const malformed = await authorizeWorkosRequest(
+  const missing = await authorizeOAuthRequest(new Request(resource), route, env, fixture.getKey);
+  const malformed = await authorizeOAuthRequest(
     new Request(resource, { headers: { Authorization: "Bearer not-a-jwt" } }),
     route,
     env,
     fixture.getKey,
   );
-  const crossProduct = await authorizeWorkosRequest(
+  const crossProduct = await authorizeOAuthRequest(
     new Request(resource, { headers: { Authorization: `Bearer ${await fixture.token({ permissions: ["calorie.read"] })}` } }),
     route,
     env,
     fixture.getKey,
   );
-  const authorized = await authorizeWorkosRequest(
+  const authorized = await authorizeOAuthRequest(
     new Request(resource, { headers: { Authorization: `Bearer ${await fixture.token()}` } }),
     route,
     env,
@@ -138,19 +134,20 @@ test("authorization classification never accepts malformed or cross-product bear
 function authorizationServerMetadata(): Record<string, unknown> {
   return {
     issuer,
-    authorization_endpoint: `${issuer}/oauth2/authorize`,
-    token_endpoint: `${issuer}/oauth2/token`,
-    registration_endpoint: `${issuer}/oauth2/register`,
-    introspection_endpoint: `${issuer}/oauth2/introspection`,
+    authorization_endpoint: `${issuer}authorize`,
+    token_endpoint: `${issuer}oauth/token`,
+    registration_endpoint: `${issuer}oidc/register`,
+    jwks_uri: `${issuer}.well-known/jwks.json`,
     client_id_metadata_document_supported: true,
+    token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
     code_challenge_methods_supported: ["S256"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     scopes_supported: ["openid", "profile", "email", "offline_access", ...PRIVATE_HOSTED_SCOPES],
   };
 }
 
-test("protected resource metadata exposes one exact private route and WorkOS issuer", async () => {
-  const response = await handleWorkosMetadataRequest(
+test("protected resource metadata exposes one exact private route and Auth0 issuer", async () => {
+  const response = await handleOAuthMetadataRequest(
     new Request("https://mcp.example/.well-known/oauth-protected-resource/reader/mcp"),
     env,
   );
@@ -165,7 +162,7 @@ test("protected resource metadata exposes one exact private route and WorkOS iss
     resource_name: "reader read-only MCP",
   });
 
-  const publicRoute = await handleWorkosMetadataRequest(
+  const publicRoute = await handleOAuthMetadataRequest(
     new Request("https://mcp.example/.well-known/oauth-protected-resource/starboard/mcp"),
     env,
   );
@@ -173,9 +170,9 @@ test("protected resource metadata exposes one exact private route and WorkOS iss
   assert.equal(publicRoute.status, 404);
 });
 
-test("authorization-server proxy fails closed unless WorkOS advertises MCP compatibility", async () => {
+test("authorization-server proxy fails closed unless Auth0 advertises MCP compatibility", async () => {
   let requested = "";
-  const response = await handleWorkosMetadataRequest(
+  const response = await handleOAuthMetadataRequest(
     new Request("https://mcp.example/.well-known/oauth-authorization-server"),
     env,
     async (input) => {
@@ -185,12 +182,12 @@ test("authorization-server proxy fails closed unless WorkOS advertises MCP compa
   );
   assert.ok(response);
   assert.equal(response.status, 200);
-  assert.equal(requested, `${issuer}/.well-known/oauth-authorization-server`);
+  assert.equal(requested, `${issuer}.well-known/oauth-authorization-server`);
   assert.deepEqual(await response.json(), authorizationServerMetadata());
 
   const invalidMetadata = authorizationServerMetadata();
   delete invalidMetadata.client_id_metadata_document_supported;
-  const rejected = await handleWorkosMetadataRequest(
+  const rejected = await handleOAuthMetadataRequest(
     new Request("https://mcp.example/.well-known/oauth-authorization-server"),
     env,
     async () => Response.json(invalidMetadata),
