@@ -6,12 +6,22 @@ interface HostedRouteBase {
   id: string;
   audience: HostedAudience;
   hosts: readonly string[];
+  challengeSecret?: OpenAIChallengeSecret;
   authMode?: "federated" | "owner-token";
   scope?: string;
   tokenSecret?: PrivateTokenSecret;
 }
 
 export type PrivateTokenSecret = "SETLINE_MCP_TOKEN";
+
+export type OpenAIChallengeSecret =
+  | "OPENAI_CHALLENGE_READER"
+  | "OPENAI_CHALLENGE_CALORIE"
+  | "OPENAI_CHALLENGE_ANIME_LIST"
+  | "OPENAI_CHALLENGE_STARBOARD"
+  | "OPENAI_CHALLENGE_HIGH_SIGNAL"
+  | "OPENAI_CHALLENGE_SIGNIFICANT_HOBBIES"
+  | "OPENAI_CHALLENGE_RESEARCH_PAPERS";
 
 export interface AdapterHostedRouteDefinition extends HostedRouteBase {
   kind: "adapter";
@@ -80,7 +90,8 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "reader",
     kind: "adapter",
     audience: "personal",
-    hosts: ["mcp.significanthobbies.com"],
+    hosts: ["reader-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_READER",
     authMode: "federated",
     scope: "reader.read",
     app: APP_DEFINITIONS.reader,
@@ -89,7 +100,8 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "calorie",
     kind: "adapter",
     audience: "personal",
-    hosts: ["mcp.significanthobbies.com"],
+    hosts: ["calorie-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_CALORIE",
     authMode: "federated",
     scope: "calorie.read",
     app: APP_DEFINITIONS.calorie,
@@ -98,7 +110,7 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "setline",
     kind: "adapter",
     audience: "personal",
-    hosts: ["mcp.significanthobbies.com"],
+    hosts: ["setline-mcp.significanthobbies.com"],
     authMode: "owner-token",
     scope: "setline.read",
     tokenSecret: "SETLINE_MCP_TOKEN",
@@ -108,7 +120,8 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "anime-list",
     kind: "native",
     audience: "personal",
-    hosts: ["mcp.significanthobbies.com"],
+    hosts: ["anime-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_ANIME_LIST",
     authMode: "federated",
     scope: "anime-list.read",
     serverName: "anime-list-by-significant-hobbies",
@@ -118,7 +131,8 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "starboard",
     kind: "adapter",
     audience: "public",
-    hosts: ["mcp.codevetter.com"],
+    hosts: ["starboard-mcp.codevetter.com"],
+    challengeSecret: "OPENAI_CHALLENGE_STARBOARD",
     app: APP_DEFINITIONS.starboard,
   },
   "/high-signal/mcp": {
@@ -126,20 +140,23 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     kind: "adapter",
     audience: "public",
     hosts: ["mcp.highsignal.app"],
+    challengeSecret: "OPENAI_CHALLENGE_HIGH_SIGNAL",
     app: APP_DEFINITIONS["high-signal"],
   },
   "/significant-hobbies/mcp": {
     id: "significant-hobbies",
     kind: "adapter",
     audience: "public",
-    hosts: ["mcp.significanthobbies.com"],
+    hosts: ["hobbies-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_SIGNIFICANT_HOBBIES",
     app: APP_DEFINITIONS["significant-hobbies"],
   },
   "/research-papers/mcp": {
     id: "research-papers",
     kind: "adapter",
     audience: "public",
-    hosts: ["mcp.highsignal.app"],
+    hosts: ["papers-mcp.highsignal.app"],
+    challengeSecret: "OPENAI_CHALLENGE_RESEARCH_PAPERS",
     app: hostedResearchPapers,
   },
 });
@@ -169,5 +186,12 @@ export function hostedRoute(
 ): HostedRouteDefinition | undefined {
   const route = HOSTED_ROUTES[pathname];
   if (!route || !hostname || compatibilityHost(hostname) || route.hosts.includes(hostname)) return route;
+  return undefined;
+}
+
+export function openAiChallengeSecret(hostname: string): OpenAIChallengeSecret | undefined {
+  for (const route of Object.values(HOSTED_ROUTES)) {
+    if (route.challengeSecret && route.hosts.includes(hostname)) return route.challengeSecret;
+  }
   return undefined;
 }

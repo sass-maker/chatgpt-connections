@@ -14,6 +14,7 @@ import {
   auth0Issuer,
   authorizeOAuthRequest,
   handleOAuthMetadataRequest,
+  type HostedWorkerEnv,
   verifyAuth0AccessToken,
 } from "../oauth.js";
 import worker from "../worker-entry.js";
@@ -254,4 +255,30 @@ test("Worker entrypoint invokes the runtime fetch with its global receiver", asy
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("OpenAI verification challenges are isolated by branded plugin hostname", async () => {
+  const challengeEnv = {
+    ...env,
+    OPENAI_CHALLENGE_READER: "reader-review-token",
+    OPENAI_CHALLENGE_CALORIE: "calorie-review-token",
+  };
+  const reader = await worker.fetch(
+    new Request("https://reader-mcp.significanthobbies.com/.well-known/openai-apps-challenge"),
+    challengeEnv as HostedWorkerEnv,
+  );
+  const calorie = await worker.fetch(
+    new Request("https://calorie-mcp.significanthobbies.com/.well-known/openai-apps-challenge"),
+    challengeEnv as HostedWorkerEnv,
+  );
+  const absent = await worker.fetch(
+    new Request("https://anime-mcp.significanthobbies.com/.well-known/openai-apps-challenge"),
+    challengeEnv as HostedWorkerEnv,
+  );
+
+  assert.equal(reader.status, 200);
+  assert.equal(await reader.text(), "reader-review-token");
+  assert.equal(await calorie.text(), "calorie-review-token");
+  assert.equal(absent.status, 404);
+  assert.equal(reader.headers.get("cache-control"), "no-store");
 });

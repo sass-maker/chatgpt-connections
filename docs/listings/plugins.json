@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "publisher": "Sarthak Agrawal",
+  "availability": { "allOpenAISupportedCountries": true },
+  "plugins": [
+    {
+      "id": "reader",
+      "name": "Reader by Significant Hobbies",
+      "shortDescription": "Search and revisit your saved reading library in ChatGPT.",
+      "longDescription": "Connect your Reader account to search saved articles, links, and PDFs, inspect an item, and browse your existing collections. Every tool is read-only: the plugin cannot save, edit, delete, share, or download content.",
+      "category": "Productivity",
+      "website": "https://read.significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/reader/issues",
+      "privacy": "https://read.significanthobbies.com/privacy",
+      "terms": "https://significanthobbies.com/terms",
+      "logo": "assets/reader.png",
+      "mcpUrl": "https://reader-mcp.significanthobbies.com/reader/mcp",
+      "authentication": "OAuth",
+      "challengeSecret": "OPENAI_CHALLENGE_READER",
+      "starterPrompts": [
+        "Find saved reading about MCP authentication.",
+        "Show my Reader collections.",
+        "Summarize the themes in my saved articles about AI agents."
+      ],
+      "releaseNotes": "Initial public submission of Reader's user-scoped, read-only MCP tools.",
+      "reviewFixture": "A dedicated review account with saved articles, one PDF record, and at least two collections; credentials are supplied only in the OpenAI portal.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find my saved reading about MCP authentication.", "expectedTool": "search_saved_reading", "expectedResult": "A bounded items page with schema version, provenance, pagination, and no credential fields." },
+          { "prompt": "List my Reader collections.", "expectedTool": "list_reader_collections", "expectedResult": "A bounded collection list belonging only to the signed-in review account." },
+          { "prompt": "Find PDFs in my saved reading.", "expectedTool": "search_saved_reading", "expectedResult": "Search runs with type pdf and returns metadata only, not a PDF download." },
+          { "prompt": "Open the first Reader item from those results.", "expectedTool": "get_saved_item", "expectedResult": "One item matching the identifier returned by the prior search." },
+          { "prompt": "Search my Reader library for zzz-no-review-match-zzz.", "expectedTool": "search_saved_reading", "expectedResult": "A successful empty items page without fabricated records." }
+        ],
+        "negative": [
+          { "prompt": "Delete the first saved Reader item.", "expectedBehavior": "No tool call; explain that the plugin is read-only.", "reason": "Reader exposes no mutation tool." },
+          { "prompt": "Download the PDF bytes for my first saved PDF.", "expectedBehavior": "No download; offer metadata available through read-only retrieval.", "reason": "PDF redistribution and downloads are excluded." },
+          { "prompt": "Show today's calorie totals.", "expectedBehavior": "Do not call Reader; explain that nutrition data is outside this plugin.", "reason": "Cross-plugin data access is not permitted." }
+        ]
+      }
+    },
+    {
+      "id": "calorie",
+      "name": "Calorie by Significant Hobbies",
+      "shortDescription": "Read your nutrition history and saved foods without changing your journal.",
+      "longDescription": "Connect your Calorie account to view a nutrition day, bounded history, saved foods, and goal-cycle context. Medication data, medical advice, weight history, food logging, and goal changes are excluded.",
+      "category": "Lifestyle",
+      "website": "https://calorie.significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/calorie/issues",
+      "privacy": "https://calorie.significanthobbies.com/privacy",
+      "terms": "https://calorie.significanthobbies.com/terms",
+      "logo": "assets/calorie.png",
+      "mcpUrl": "https://calorie-mcp.significanthobbies.com/calorie/mcp",
+      "authentication": "OAuth",
+      "challengeSecret": "OPENAI_CHALLENGE_CALORIE",
+      "starterPrompts": [
+        "Show my nutrition totals for yesterday.",
+        "Find my saved high-protein foods.",
+        "Compare my recorded nutrition across the last seven days."
+      ],
+      "releaseNotes": "Initial public submission of Calorie's user-scoped, medication-free, read-only MCP tools.",
+      "reviewFixture": "A dedicated review account with seven nutrition days, saved foods, and one historical goal cycle; credentials are supplied only in the OpenAI portal.",
+      "tests": {
+        "positive": [
+          { "prompt": "Show my nutrition totals for 2026-08-01 in Asia/Kolkata.", "expectedTool": "get_daily_nutrition", "expectedResult": "One dated nutrition summary with explicit units and no medication fields." },
+          { "prompt": "Show my nutrition history from 2026-08-01 through 2026-08-07.", "expectedTool": "get_nutrition_history", "expectedResult": "A bounded page of daily nutrition records for the signed-in review account." },
+          { "prompt": "Find my saved foods containing protein.", "expectedTool": "search_saved_foods", "expectedResult": "A bounded saved-food list with explicit nutrient units." },
+          { "prompt": "List my previous goal cycles.", "expectedTool": "list_goal_cycles", "expectedResult": "Historical goal-cycle context without changing targets." },
+          { "prompt": "Search my saved foods for zzz-no-review-match-zzz.", "expectedTool": "search_saved_foods", "expectedResult": "A successful empty page without fabricated foods." }
+        ],
+        "negative": [
+          { "prompt": "Log a banana and 300 ml of water for today.", "expectedBehavior": "No tool call; explain that journal mutations are unavailable.", "reason": "The plugin is read-only." },
+          { "prompt": "Show my medications and weight history.", "expectedBehavior": "Refuse the excluded fields and do not reveal them.", "reason": "Medication and weight-history data are outside the approved boundary." },
+          { "prompt": "Change my calorie goal to 1,800.", "expectedBehavior": "No tool call; explain that targets cannot be changed.", "reason": "Goal mutations are unavailable." }
+        ]
+      }
+    },
+    {
+      "id": "anime-list",
+      "name": "Anime List by Significant Hobbies",
+      "shortDescription": "Explore anime and manga alongside your personal watchlists.",
+      "longDescription": "Search anime and manga, inspect catalog details and stats, pick a random title, and read the signed-in user's anime and manga watchlists. The plugin cannot add, update, tag, score, or remove watchlist entries.",
+      "category": "Lifestyle",
+      "website": "https://anime.significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/anime-list/issues",
+      "privacy": "https://anime.significanthobbies.com/privacy",
+      "terms": "https://anime.significanthobbies.com/terms",
+      "logo": "assets/anime-list.png",
+      "mcpUrl": "https://anime-mcp.significanthobbies.com/anime-list/mcp",
+      "authentication": "OAuth",
+      "challengeSecret": "OPENAI_CHALLENGE_ANIME_LIST",
+      "starterPrompts": [
+        "Find highly rated mystery anime from the 2000s.",
+        "What is currently on my anime watchlist?",
+        "Pick a random anime and show its details."
+      ],
+      "releaseNotes": "Initial public submission of Anime List's catalog and user-scoped watchlist read tools.",
+      "reviewFixture": "A dedicated review account with anime and manga watchlist entries and tags; credentials are supplied only in the OpenAI portal.",
+      "tests": {
+        "positive": [
+          { "prompt": "Search for mystery anime called Monster.", "expectedTool": "search_anime", "expectedResult": "Bounded public catalog matches." },
+          { "prompt": "Show details for the first anime result.", "expectedTool": "get_anime_detail", "expectedResult": "One exact catalog record using the prior identifier." },
+          { "prompt": "Pick a random anime.", "expectedTool": "get_random_anime", "expectedResult": "One catalog title and its available metadata." },
+          { "prompt": "List my anime watchlist.", "expectedTool": "list_watchlist", "expectedResult": "Only watchlist records mapped to the signed-in review account." },
+          { "prompt": "Search manga for zzz-no-review-match-zzz.", "expectedTool": "search_manga", "expectedResult": "A successful empty result without fabrication." }
+        ],
+        "negative": [
+          { "prompt": "Mark the first watchlist title as completed and score it 10.", "expectedBehavior": "No mutation tool call; explain that watchlists are read-only.", "reason": "Watchlist writes are excluded." },
+          { "prompt": "Send an arbitrary POST request to the anime API.", "expectedBehavior": "Refuse; use only fixed registered tools and routes.", "reason": "Arbitrary methods, URLs, and filters are not exposed." },
+          { "prompt": "Show my saved Reader articles.", "expectedBehavior": "Do not call Anime List; explain the scope boundary.", "reason": "Cross-plugin personal data access is not permitted." }
+        ]
+      }
+    },
+    {
+      "id": "starboard",
+      "name": "Starboard by CodeVetter",
+      "shortDescription": "Research public repositories and evidence-backed tool adoption.",
+      "longDescription": "Search Starboard's public repository catalog, inspect a catalog entry, preview a public GitHub project, and explore evidence-backed framework adoption. Private repositories, saved lists, discussions, jobs, and raw databases are unavailable.",
+      "category": "Developer Tools",
+      "website": "https://starboard.codevetter.com",
+      "support": "https://github.com/Codevetter/starboard/issues",
+      "privacy": "https://codevetter.com/privacy",
+      "terms": "https://codevetter.com/terms",
+      "logo": "assets/starboard.png",
+      "mcpUrl": "https://starboard-mcp.codevetter.com/starboard/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_STARBOARD",
+      "starterPrompts": [
+        "Find popular public TypeScript repositories for MCP servers.",
+        "Preview a public GitHub repository before I evaluate it.",
+        "Show evidence of adoption for a developer tool."
+      ],
+      "releaseNotes": "Initial public submission of Starboard's anonymous, public-catalog, read-only MCP tools.",
+      "reviewFixture": "No account required; tests use the live public catalog.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find public TypeScript repositories related to MCP.", "expectedTool": "search_repositories", "expectedResult": "A bounded public repository page with provenance and pagination." },
+          { "prompt": "Show the first repository in more detail.", "expectedTool": "get_repository", "expectedResult": "One public catalog entry matching the prior stable identifier." },
+          { "prompt": "Preview https://github.com/modelcontextprotocol/typescript-sdk.", "expectedTool": "preview_project", "expectedResult": "A read-only public GitHub project preview that is not saved." },
+          { "prompt": "Show public adoption evidence for React.", "expectedTool": "inspect_tool_adoption", "expectedResult": "Bounded evidence-backed tool adoption records." },
+          { "prompt": "Search public repositories for zzz-no-review-match-zzz.", "expectedTool": "search_repositories", "expectedResult": "A successful empty page without fabricated repositories." }
+        ],
+        "negative": [
+          { "prompt": "Inspect my private repository.", "expectedBehavior": "Refuse or explain that only the public catalog is available.", "reason": "Private repositories are excluded." },
+          { "prompt": "Save the first repository to my Starboard list.", "expectedBehavior": "No tool call; explain that saved-list mutations are unavailable.", "reason": "The plugin is read-only and anonymous." },
+          { "prompt": "Read owner discussions and background jobs.", "expectedBehavior": "Refuse the internal surfaces.", "reason": "Discussions, jobs, and internal state are outside the public boundary." }
+        ]
+      }
+    },
+    {
+      "id": "high-signal",
+      "name": "High Signal",
+      "shortDescription": "Query evidence-backed public signals, briefs, and track records.",
+      "longDescription": "Search High Signal's published intelligence, retrieve one signal, read the current public Daily Brief, and inspect the public hit-rate dataset. Watchlists, delivery state, admin tools, provider controls, ingest, and refresh operations are unavailable.",
+      "category": "News",
+      "website": "https://highsignal.app",
+      "support": "https://github.com/High-Signal-App/high-signal/issues",
+      "privacy": "https://highsignal.app/privacy",
+      "terms": "https://highsignal.app/terms",
+      "logo": "assets/high-signal.png",
+      "mcpUrl": "https://mcp.highsignal.app/high-signal/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_HIGH_SIGNAL",
+      "starterPrompts": [
+        "Find recent public signals about AI infrastructure.",
+        "Give me today's High Signal brief.",
+        "Show the public track record behind High Signal."
+      ],
+      "releaseNotes": "Initial public submission of High Signal's anonymous published-data MCP tools.",
+      "reviewFixture": "No account required; tests use the live published signal feed.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find published signals about AI infrastructure.", "expectedTool": "search_signals", "expectedResult": "A bounded page of published signals and evidence." },
+          { "prompt": "Open the first signal from those results.", "expectedTool": "get_signal", "expectedResult": "One exact published signal selected by slug." },
+          { "prompt": "Give me today's public Daily Brief.", "expectedTool": "get_daily_brief", "expectedResult": "The current public brief with freshness and evidence fields." },
+          { "prompt": "Show the public High Signal track record.", "expectedTool": "get_track_record", "expectedResult": "A bounded page from the public hit-rate dataset." },
+          { "prompt": "Search published signals for zzz-no-review-match-zzz.", "expectedTool": "search_signals", "expectedResult": "A successful empty page without fabricated signals." }
+        ],
+        "negative": [
+          { "prompt": "Add the first signal to my watchlist.", "expectedBehavior": "No tool call; explain that watchlists are unavailable.", "reason": "The public plugin has no personal or write tools." },
+          { "prompt": "Trigger a provider refresh and ingest new signals.", "expectedBehavior": "Refuse the operation.", "reason": "Ingest and refresh controls are excluded." },
+          { "prompt": "Show admin state and provider credentials.", "expectedBehavior": "Refuse and reveal no internal or credential fields.", "reason": "Admin, provider, and secret state are outside the public boundary." }
+        ]
+      }
+    },
+    {
+      "id": "significant-hobbies",
+      "name": "Significant Hobbies",
+      "shortDescription": "Explore meaningful hobbies, experiences, and public life timelines.",
+      "longDescription": "Search the public Significant Hobbies taxonomy, discover experience ideas and first steps, and read timelines explicitly published as PUBLIC. Daily entries, journals, habits, Trajectory, commitments, bucket lists, accounts, and private or unlisted timelines are unavailable.",
+      "category": "Lifestyle",
+      "website": "https://significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/significanthobbies/issues",
+      "privacy": "https://significanthobbies.com/privacy",
+      "terms": "https://significanthobbies.com/terms",
+      "logo": "assets/significant-hobbies.png",
+      "mcpUrl": "https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_SIGNIFICANT_HOBBIES",
+      "starterPrompts": [
+        "Find hands-on hobbies I can start on weekends.",
+        "Suggest public experiences for learning astronomy.",
+        "Find a public timeline about developing a creative practice."
+      ],
+      "releaseNotes": "Initial public submission of Significant Hobbies' anonymous public-data MCP tools.",
+      "reviewFixture": "No account required; tests use the live public taxonomy and PUBLIC timelines.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find public hands-on hobbies for weekends.", "expectedTool": "search_hobbies", "expectedResult": "A bounded public hobby taxonomy page." },
+          { "prompt": "Find public experiences for learning astronomy.", "expectedTool": "search_experiences", "expectedResult": "A bounded page of public experience ideas." },
+          { "prompt": "Show the first experience and its first steps.", "expectedTool": "get_experience", "expectedResult": "One public experience selected by the prior slug." },
+          { "prompt": "Find public timelines about creative practice.", "expectedTool": "search_public_timelines", "expectedResult": "Only timelines whose current visibility is PUBLIC." },
+          { "prompt": "Search hobbies for zzz-no-review-match-zzz.", "expectedTool": "search_hobbies", "expectedResult": "A successful empty page without fabricated hobbies." }
+        ],
+        "negative": [
+          { "prompt": "Read my private journal, habits, and Daily entries.", "expectedBehavior": "Refuse and return no private data.", "reason": "Personal journals and tracking surfaces are excluded." },
+          { "prompt": "Show PRIVATE or UNLISTED timelines.", "expectedBehavior": "Refuse; only PUBLIC timelines may be returned.", "reason": "Timeline visibility is an enforced privacy boundary." },
+          { "prompt": "Create a new bucket-list item for me.", "expectedBehavior": "No tool call; explain that the plugin is read-only.", "reason": "Mutations and bucket lists are unavailable." }
+        ]
+      }
+    },
+    {
+      "id": "research-papers",
+      "name": "Research Papers by High Signal",
+      "shortDescription": "Browse public hot papers, sleepers, and curated reading paths.",
+      "longDescription": "Read approved Research Papers exports: current hot-paper signals, high-quality under-recognized papers, and curated reading paths. Full-corpus search, similarity, paid RAG, PDFs, ingest, enrichment, databases, and operator controls are not hosted.",
+      "category": "Education",
+      "website": "https://papers.highsignal.app",
+      "support": "https://github.com/High-Signal-App/research-papers/issues",
+      "privacy": "https://highsignal.app/privacy",
+      "terms": "https://highsignal.app/terms",
+      "logo": "assets/research-papers.png",
+      "mcpUrl": "https://papers-mcp.highsignal.app/research-papers/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_RESEARCH_PAPERS",
+      "starterPrompts": [
+        "Show current hot research papers.",
+        "Find under-recognized papers worth reading.",
+        "Give me a curated reading path for an available topic."
+      ],
+      "releaseNotes": "Initial public submission of Research Papers' anonymous approved-export MCP tools.",
+      "reviewFixture": "No account required; tests use the live public export files.",
+      "tests": {
+        "positive": [
+          { "prompt": "Show current hot research papers.", "expectedTool": "list_hot_papers", "expectedResult": "A bounded page from the approved public hot-paper export." },
+          { "prompt": "Show under-recognized papers worth reading.", "expectedTool": "list_sleepers", "expectedResult": "A bounded page from the approved public sleeper export." },
+          { "prompt": "Show only arXiv papers in the current hot list.", "expectedTool": "list_hot_papers", "expectedResult": "A source-filtered bounded result when source metadata is available." },
+          { "prompt": "Give me an available curated reading path.", "expectedTool": "get_reading_path", "expectedResult": "One public path with ordered paper references." },
+          { "prompt": "List hot papers starting far beyond the available records.", "expectedTool": "list_hot_papers", "expectedResult": "A successful empty page without fabricated papers." }
+        ],
+        "negative": [
+          { "prompt": "Search the private full paper corpus for a phrase.", "expectedBehavior": "Explain that hosted full-corpus search is unavailable.", "reason": "Only approved public exports are hosted." },
+          { "prompt": "Download the PDF for the first paper and run paid RAG over it.", "expectedBehavior": "Refuse both requests and offer available metadata.", "reason": "PDF redistribution and paid RAG are excluded." },
+          { "prompt": "Ingest this new paper and enrich the database.", "expectedBehavior": "No tool call; explain that ingest and enrichment are unavailable.", "reason": "The plugin is read-only and exposes no operator controls." }
+        ]
+      }
+    }
+  ]
+}

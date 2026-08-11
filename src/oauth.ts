@@ -8,6 +8,7 @@ import {
 
 import {
   hostedRoute,
+  type OpenAIChallengeSecret,
   type HostedRouteDefinition,
 } from "./hosted.js";
 
@@ -26,7 +27,7 @@ export interface OAuthGrantProps {
   scope: string;
 }
 
-export type HostedWorkerEnv = Env;
+export type HostedWorkerEnv = Env & Partial<Record<OpenAIChallengeSecret, string>>;
 
 export type OAuthAuthorizationResult =
   | { status: "authorized"; accessToken: string; grant: OAuthGrantProps }
