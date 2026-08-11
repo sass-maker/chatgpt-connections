@@ -283,9 +283,13 @@ async function handleNative(
     method: "POST",
     headers,
     body,
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(NATIVE_TIMEOUT_MS),
   });
+  if (response.status >= 300 && response.status < 400) {
+    await response.body?.cancel();
+    return jsonRpcError(502, -32603, "Upstream MCP redirects are not allowed.");
+  }
   return advertiseSecuritySchemes(await boundedResponse(response), route);
 }
 

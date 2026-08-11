@@ -311,7 +311,7 @@ async function proxyAuthorizationServerMetadata(
   try {
     const upstream = await fetchImpl(new URL(AUTHORIZATION_SERVER_METADATA_PATH, issuer), {
       headers: { Accept: "application/json" },
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(METADATA_FETCH_TIMEOUT_MS),
     });
     if (!upstream.ok) throw new Error("metadata_unavailable");

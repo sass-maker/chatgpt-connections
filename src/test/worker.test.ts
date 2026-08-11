@@ -272,7 +272,7 @@ test("private product secrets remain isolated under concurrent OAuth calls", asy
 });
 
 test("Anime List proxy fixes the upstream URL and replaces the OAuth bearer with its Worker secret", async () => {
-  const calls: Array<{ url: string; authorization: string | null; method: string }> = [];
+  const calls: Array<{ url: string; authorization: string | null; method: string; redirect: RequestRedirect }> = [];
   const response = await handleHostedRequest(
     requestFor("/anime-list/mcp", initializeRequest(), { authorization: "Bearer oauth-chatgpt" }),
     async (input, init) => {
@@ -281,6 +281,7 @@ test("Anime List proxy fixes the upstream URL and replaces the OAuth bearer with
         url: request.url,
         authorization: request.headers.get("authorization"),
         method: request.method,
+        redirect: request.redirect,
       });
       return nativeMcpResponse(request);
     },
@@ -291,8 +292,21 @@ test("Anime List proxy fixes the upstream URL and replaces the OAuth bearer with
     url: "https://anime.significanthobbies.com/api/mcp",
     authorization: "Bearer anime_list_worker-secret",
     method: "POST",
+    redirect: "manual",
   }]);
   assert.equal(JSON.stringify(await json(response)).includes("oauth-chatgpt"), false);
+});
+
+test("Anime List proxy rejects upstream redirects without forwarding them", async () => {
+  const response = await handleHostedRequest(
+    requestFor("/anime-list/mcp", initializeRequest()),
+    async () => new Response(null, { status: 302, headers: { Location: "https://elsewhere.example/" } }),
+    authorizationFor("/anime-list/mcp"),
+  );
+
+  assert.equal(response.status, 502);
+  assert.equal(response.headers.has("location"), false);
+  assert.match(JSON.stringify(await json(response)), /redirects are not allowed/u);
 });
 
 test("public routes reject credentials and use anonymous upstream reads", async () => {

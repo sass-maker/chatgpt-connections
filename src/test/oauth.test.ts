@@ -173,17 +173,20 @@ test("protected resource metadata exposes one exact private route and Auth0 issu
 
 test("authorization-server proxy fails closed unless Auth0 advertises MCP compatibility", async () => {
   let requested = "";
+  let requestedRedirect: RequestRedirect | undefined;
   const response = await handleOAuthMetadataRequest(
     new Request("https://mcp.example/.well-known/oauth-authorization-server"),
     env,
-    async (input) => {
+    async (input, init) => {
       requested = String(input);
+      requestedRedirect = init?.redirect;
       return Response.json(authorizationServerMetadata());
     },
   );
   assert.ok(response);
   assert.equal(response.status, 200);
   assert.equal(requested, `${issuer}.well-known/oauth-authorization-server`);
+  assert.equal(requestedRedirect, "manual");
   assert.deepEqual(await response.json(), authorizationServerMetadata());
 
   const invalidMetadata = authorizationServerMetadata();

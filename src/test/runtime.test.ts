@@ -51,11 +51,12 @@ test("read client rejects arbitrary origins and non-HTTPS remote bases", async (
 });
 
 test("read client uses GET, applies bounded retry, and never exposes its token", async () => {
-  const calls: Array<{ method: string | undefined; authorization: string | null }> = [];
+  const calls: Array<{ method: string | undefined; authorization: string | null; redirect: RequestRedirect | undefined }> = [];
   const fetchImpl: typeof fetch = async (_input, init) => {
     calls.push({
       method: init?.method,
       authorization: new Headers(init?.headers).get("authorization"),
+      redirect: init?.redirect,
     });
     if (calls.length === 1) return Response.json({ error: "temporary" }, { status: 503 });
     return Response.json({ items: [{ id: "one", title: "Safe" }] });
@@ -74,6 +75,7 @@ test("read client uses GET, applies bounded retry, and never exposes its token",
   assert.deepEqual(payload, { items: [{ id: "one", title: "Safe" }] });
   assert.equal(calls.length, 2);
   assert.deepEqual(calls.map((call) => call.method), ["GET", "GET"]);
+  assert.equal(calls.every((call) => call.redirect === "manual"), true);
   assert.equal(calls.every((call) => call.authorization === "Bearer rdr_example-token"), true);
   assert.equal(JSON.stringify(payload).includes("rdr_example-token"), false);
 });

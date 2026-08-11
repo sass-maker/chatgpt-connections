@@ -98,7 +98,7 @@ export class ReadClient<Operations extends Record<string, ReadOperation<Record<s
           method: "GET",
           headers,
           signal: AbortSignal.timeout(this.#timeoutMs),
-          redirect: "error",
+          redirect: "manual",
         });
         if (!response.ok) {
           const mapped = errorFromStatus(response.status);
