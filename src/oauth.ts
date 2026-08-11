@@ -324,6 +324,7 @@ async function proxyAuthorizationServerMetadata(
     console.error(JSON.stringify({
       message: "auth0_metadata_unavailable",
       errorType: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message.slice(0, 256) : undefined,
     }));
     return Response.json(
       { error: "authorization_server_unavailable" },
