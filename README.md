@@ -13,6 +13,11 @@ Fleet routes read-only data according to its existing storage boundary:
 - Public hosted routes are anonymous and can read only approved public APIs or
   exports.
 
+[`docs/api-parity.md`](docs/api-parity.md) defines the exact parity guarantee:
+complete parity with each approved MCP/read contract, not with every product
+API. Excluded writes, administrative surfaces, and private fields remain
+deliberately unavailable.
+
 Secure MCP Tunnel is not required for this phase. Indulge and other device-only
 products remain deferred until they have an approved cloud data boundary.
 
@@ -160,6 +165,23 @@ pnpm start:reader
 
 Generated binding types come from `wrangler types`; rerun
 `pnpm types:worker` after changing `wrangler.jsonc`.
+
+## Production monitoring
+
+`pnpm monitor:production` runs the credential-free production contract suite.
+It verifies all seven health and hostname-isolation boundaries; public MCP
+initialization, read-only tool catalogs, representative bounded reads, and
+mutation rejection; plus private OAuth challenges and metadata. The JSON
+receipt retains only status codes, protocol/schema fields, server/tool names,
+item counts, scopes, resource identifiers, and timestamps. It never retains
+bearers or source record bodies.
+
+GitHub Actions runs the same suite daily at 03:17 UTC and on manual dispatch.
+The redacted receipt is retained for 30 days even when a check fails:
+
+```bash
+pnpm monitor:production -- --output production-monitor-receipt.json
+```
 
 ## Activation and revocation
 
