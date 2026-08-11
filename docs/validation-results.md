@@ -69,16 +69,28 @@ Application-side activation completed on 2026-08-11:
   to its operator-local FastAPI corpus. Setline correctly fails closed while
   its credential is absent.
 
-External activation remains incomplete. The Setline production database has no
-owner row, so a real user must sign in once before its owner-scoped token can be
-issued. Auth0 tenant signup, the standard hosted issuer, verified Google owner,
-CIMD, and resource-parameter compatibility are configured without a card. Four
-exact one-hour API audiences, read permissions, and default third-party user
-grants are configured. The shared Worker was released from clean, green `main`
-with exact SHA tags. Live verification passed Auth0 metadata/JWKS, the gateway
-metadata proxy, all four exact protected-resource documents, four anonymous
-initializations and four 401 private challenges. Representative Starboard, High
-Signal, Significant Hobbies, and Research Papers tool calls returned successful
-structured results without retaining record bodies. No ChatGPT app or retained
-ChatGPT evaluation has run; those remaining states are tracked separately in
-the active OpenSpec change.
+The seven-plugin production surface was released on 2026-08-11. Reader,
+Calorie, and Anime List run product-side federated JWT verification from their
+reviewed `main` revisions. Gateway version
+`514b8da4-9775-4a25-bbfb-35a5a8a469ef` was deployed from clean, green `main`
+SHA `5c5fc87708bef0fd0e7ec40de96477cfcba8a5f5` and serves seven distinct
+branded domains. The branded activation verifier passed Auth0 discovery,
+RS256 JWKS, all three gateway metadata proxies, and the exact Reader, Calorie,
+and Anime List protected-resource documents.
+
+All seven branded health endpoints returned 200. Public MCP initialization and
+tool discovery succeeded for Starboard, High Signal, Significant Hobbies, and
+Research Papers; representative calls returned bounded structured results.
+The three personal routes returned exact 401 OAuth challenges without a bearer.
+A cross-host private path returned 404, a bearer on a public route returned
+401, and an invented mutation tool returned MCP `-32602`. All seven OpenAI
+challenge URLs return 404 until their matching portal-generated secrets are
+installed, which is the intended fail-closed pre-submission state. No private
+record body or credential was retained.
+
+OpenAI portal activation remains incomplete: seven drafts must be created,
+their seven challenge values installed as matching Worker secrets, reviewer
+fixtures supplied for the three OAuth plugins, the retained ChatGPT evaluations
+run, and each draft submitted for review and explicitly published after
+approval. Setline remains deferred and fail-closed; it is not one of the seven
+submissions.

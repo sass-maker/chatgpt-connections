@@ -93,20 +93,21 @@ and every other hosted product must not be added to Codex.
 | Product | Source | Protocol | Auth/config | Client |
 | --- | --- | --- | --- | --- |
 | CodeVetter | Sidecar/database verified | STDIO implementation ready | In-app repository consent pending | Codex registration pending |
-| Reader | Federated account API and tests ready | Gateway token-forwarding route ready | Branded Auth0 API/grant ready | Branded deployment and public plugin pending |
-| Calorie | Federated account API and tests ready | Gateway token-forwarding route ready | Branded Auth0 API/grant ready | Branded deployment and public plugin pending |
+| Reader | Federated account API and tests live | Branded gateway route live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
+| Calorie | Federated account API and tests live | Branded gateway route live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
 | Setline | API projection ready | Live Worker route; OAuth metadata verified | Auth0 API/grant ready; owner account/token pending, route fails closed | ChatGPT app deferred |
-| Anime List | Federated native MCP and tests ready | Gateway token-forwarding proxy ready | Branded Auth0 API/grant ready | Branded deployment and public plugin pending |
-| Starboard | Public API ready | Anonymous route and branded host ready | No auth | Branded deployment and public plugin pending |
-| High Signal | Public surface ready | Anonymous route and branded host ready | No auth | Branded deployment and public plugin pending |
-| Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous route and branded host ready | No auth | Branded deployment and public plugin pending |
-| Research Papers | Public exports ready | Export-only route and branded host ready | No auth | Branded deployment and public plugin pending |
+| Anime List | Federated native MCP and tests live | Branded token-forwarding proxy live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
+| Starboard | Public API live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
+| High Signal | Public surface live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
+| Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
+| Research Papers | Public exports live | Export-only branded route live | No auth | OpenAI portal draft/submission pending |
 
 No OAuth KV is required. The existing workers.dev gateway remains active. The
-federated product releases, seven branded custom domains, reviewer fixtures,
-retained live evaluations, and public plugin submissions remain gated on green
-PRs and the guarded release path; Setline also waits for its first owner
-account/token and is not part of this publication.
+three federated product releases and seven branded custom domains are live from
+reviewed, green `main` revisions. Credential-free OAuth activation and
+representative public live calls pass. OpenAI portal drafts, per-draft domain
+challenge secrets, reviewer-account fixtures, retained ChatGPT evaluations,
+review, and publication remain; Setline is not part of this publication.
 
 ## Development and verification
 

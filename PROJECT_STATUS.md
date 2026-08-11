@@ -3,9 +3,10 @@
 ## Why / What
 
 ChatGPT Connections is Fleet's shared read-only MCP gateway for existing
-cloud-backed product data. Public product routes remain anonymous; personal
-product routes use owner-only OAuth and keep product credentials inside the
-Worker. CodeVetter and other device-local sources remain outside this gateway.
+cloud-backed product data. Public product routes remain anonymous; Reader,
+Calorie, and Anime List use user-scoped federated OAuth that is verified by
+both the gateway and the owning product. CodeVetter and other device-local
+sources remain outside this gateway.
 
 Multi-user account linking, mutations, device-only data upload, private
 Significant Hobbies records, and the full local Research Papers corpus are out
@@ -33,20 +34,25 @@ of scope.
 - 2026-08-11 — Released the SHA-tagged gateway, verified all OAuth/resource
   metadata, initialized all eight routes, and completed representative public
   tool calls without retaining record bodies.
+- 2026-08-11 — Released Reader, Calorie, and Anime List federated verifiers;
+  attached seven independent branded custom domains; published seven complete
+  OpenAI listing packages; and passed branded OAuth plus live read-only,
+  host-isolation, and mutation-absence checks.
 
 ## Products
 
-- `fleet-chatgpt-connections` — Live Cloudflare Worker at the account's
-  `workers.dev` origin with eight fixed MCP routes.
-- Eight independent MCP route definitions: Reader, Calorie, Setline, Anime
-  List, Starboard, High Signal, Significant Hobbies, and Research Papers.
+- `fleet-chatgpt-connections` — Live SHA-tagged Cloudflare Worker at the
+  compatibility `workers.dev` origin and seven independent branded domains.
+- Seven public plugin endpoints: Reader, Calorie, Anime List, Starboard, High
+  Signal, Significant Hobbies, and Research Papers.
+- Setline remains a fail-closed compatibility route and is not published.
 
 ## Features (shipped)
 
 - Fixed per-product Streamable HTTP MCP routes with explicit read-only tools.
 - Anonymous public routes that reject credentials.
-- Auth0 owner, route audience, lifetime, and product-read permission checks for
-  personal routes; upstream product tokens stay in matching Worker secrets.
+- Auth0 subject, exact route audience, lifetime, and product-read permission
+  checks for federated personal routes, repeated by the owning product API.
 - Bounded requests, responses, upstream timeouts, safe CORS, no-store private
   responses, and secret-safe logging.
 - Exact per-tool OAuth or no-auth security declarations.
@@ -56,6 +62,10 @@ of scope.
   third-party user grants; DCR, custom domains, and paid features stay off.
 - Production metadata/JWKS verification and status-only public/private smoke
   receipts. Setline remains fail-closed until its first owner token exists.
+- Seven unique branded hosts with isolated OpenAI plaintext-challenge bindings;
+  absent challenge secrets fail closed until the portal creates each draft.
+- Seven portal-ready listing packages with branded icons, legal/support links,
+  starter prompts, release notes, and positive/negative review tests.
 
 ## Work queue
 
