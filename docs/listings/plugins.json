@@ -210,9 +210,9 @@
       "tests": {
         "positive": [
           { "prompt": "Find public hands-on hobbies for weekends.", "expectedTool": "search_hobbies", "expectedResult": "A bounded public hobby taxonomy page." },
-          { "prompt": "Find public experiences for learning astronomy.", "expectedTool": "search_experiences", "expectedResult": "A bounded page of public experience ideas." },
+          { "prompt": "Find public experiences involving the Northern Lights.", "expectedTool": "search_experiences", "expectedResult": "A bounded page of public experience ideas." },
           { "prompt": "Show the first experience and its first steps.", "expectedTool": "get_experience", "expectedResult": "One public experience selected by the prior slug." },
-          { "prompt": "Find public timelines about creative practice.", "expectedTool": "search_public_timelines", "expectedResult": "Only timelines whose current visibility is PUBLIC." },
+          { "prompt": "Show an available public hobby timeline.", "expectedTool": "search_public_timelines", "expectedResult": "Only timelines whose current visibility is PUBLIC." },
           { "prompt": "Search hobbies for zzz-no-review-match-zzz.", "expectedTool": "search_hobbies", "expectedResult": "A successful empty page without fabricated hobbies." }
         ],
         "negative": [
@@ -248,7 +248,7 @@
           { "prompt": "Show current hot research papers.", "expectedTool": "list_hot_papers", "expectedResult": "A bounded page from the approved public hot-paper export." },
           { "prompt": "Show under-recognized papers worth reading.", "expectedTool": "list_sleepers", "expectedResult": "A bounded page from the approved public sleeper export." },
           { "prompt": "Show only arXiv papers in the current hot list.", "expectedTool": "list_hot_papers", "expectedResult": "A source-filtered bounded result when source metadata is available." },
-          { "prompt": "Give me an available curated reading path.", "expectedTool": "get_reading_path", "expectedResult": "One public path with ordered paper references." },
+          { "prompt": "Give me the sutskever-carmack-core curated reading path.", "expectedTool": "get_reading_path", "expectedResult": "One public path with ordered paper references." },
           { "prompt": "List hot papers starting far beyond the available records.", "expectedTool": "list_hot_papers", "expectedResult": "A successful empty page without fabricated papers." }
         ],
         "negative": [

@@ -33,6 +33,10 @@ test("Starboard repository reads cannot populate the application cache", () => {
   assert.equal(path, "/api/repos/123?catalogOnly=1");
 });
 
+test("Starboard repository search filters unmatched upstream fallbacks locally", () => {
+  assert.equal(APP_DEFINITIONS.starboard.tools.search_repositories?.localQuery, true);
+});
+
 test("read client rejects arbitrary origins and non-HTTPS remote bases", async () => {
   assert.throws(
     () =>

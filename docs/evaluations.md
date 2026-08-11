@@ -2,6 +2,16 @@
 
 Run these after local checks, with MCP Inspector, and again in ChatGPT developer mode. Save only tool names, sanitized arguments/results, pass/fail, and timestamps—never credentials or raw private payloads.
 
+The four anonymous listings also have an executable protocol-level preflight:
+
+```bash
+pnpm eval:submission:public -- --output public-submission-evals.json
+```
+
+It runs the committed 5-positive/3-negative shape for each public listing and
+records 32 redacted results. It does not claim to test model tool selection or
+authenticated private data; those remain explicit manual gates in its receipt.
+
 For every connection, verify:
 
 1. Direct: ask for one task named by a registered tool; expect only that app's tool.

@@ -338,6 +338,7 @@ const starboard: AppDefinition = {
       operation: "discover",
       mode: "public-api",
       collectionKeys: ["repos", "items"],
+      localQuery: true,
     },
     get_repository: {
       title: "Get public repository",

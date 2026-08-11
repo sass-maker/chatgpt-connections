@@ -23,6 +23,8 @@ of scope.
 
 ## Timeline
 
+- 2026-08-12 — Added a redacted 32-case live submission preflight for the four
+  anonymous plugins and fail-closed tracking for remaining browser/OAuth gates.
 - 2026-08-11 — Added the fixed-route Worker implementation, OAuth isolation,
   public/private security schemes, tests, path-scoped CI, and guarded manual
   deployment path.
@@ -66,6 +68,8 @@ of scope.
   absent challenge secrets fail closed until the portal creates each draft.
 - Seven portal-ready listing packages with branded icons, legal/support links,
   starter prompts, release notes, and positive/negative review tests.
+- Reproducible public listing evaluations with no retained prompts, arguments,
+  source records, upstream errors, or credentials.
 
 ## Work queue
 

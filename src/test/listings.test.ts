@@ -11,7 +11,11 @@ interface Listing {
   oauthResource?: string;
   challengeSecret: string;
   starterPrompts: string[];
-  tests: { positive: unknown[]; negative: unknown[] };
+  reviewFixture?: string;
+  tests: {
+    positive: Array<{ expectedResult?: string; expectedTool?: string; prompt?: string }>;
+    negative: Array<{ expectedBehavior?: string; prompt?: string; reason?: string }>;
+  };
   website: string;
   support: string;
   privacy: string;
@@ -32,6 +36,16 @@ test("all seven public listing packages are complete and independently verifiabl
     assert.ok(listing.starterPrompts.length >= 3);
     assert.equal(listing.tests.positive.length, 5);
     assert.equal(listing.tests.negative.length, 3);
+    for (const evaluation of listing.tests.positive) {
+      assert.ok(evaluation.prompt?.trim());
+      assert.ok(evaluation.expectedTool?.trim());
+      assert.ok(evaluation.expectedResult?.trim());
+    }
+    for (const evaluation of listing.tests.negative) {
+      assert.ok(evaluation.prompt?.trim());
+      assert.ok(evaluation.expectedBehavior?.trim());
+      assert.ok(evaluation.reason?.trim());
+    }
     assert.match(listing.logo, /^assets\/[a-z0-9-]+\.png$/u);
     const logo = await readFile(new URL(`../../docs/listings/${listing.logo}`, import.meta.url));
     assert.ok(logo.byteLength > 0);
@@ -51,5 +65,6 @@ test("all seven public listing packages are complete and independently verifiabl
     assert.deepEqual(route.hosts, [url.hostname]);
     assert.equal(route.challengeSecret, listing.challengeSecret);
     assert.equal(route.oauthAudience, listing.oauthResource);
+    if (route.audience === "personal") assert.ok(listing.reviewFixture?.trim());
   }
 });

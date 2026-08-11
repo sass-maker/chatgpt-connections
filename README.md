@@ -183,6 +183,24 @@ The redacted receipt is retained for 30 days even when a check fails:
 pnpm monitor:production -- --output production-monitor-receipt.json
 ```
 
+## Submission evaluations
+
+`pnpm eval:submission:public` executes the five positive and three negative
+listing cases for each anonymous plugin against its live branded MCP endpoint.
+The receipt contains only case numbers, tool names, result shapes, item counts,
+status codes, and pass/fail state; it never retains prompts, arguments, source
+records, upstream failures, or credentials.
+
+```bash
+pnpm eval:submission:public -- --output public-submission-evals.json
+```
+
+This protocol suite proves 32 public server cases. It deliberately reports
+`private_authenticated_evaluations` and `chatgpt_model_behavior` as manual
+gates: the three OAuth plugins still require owner and non-owner browser sign-in,
+and all seven prompt-level cases must still be exercised in ChatGPT before
+submission.
+
 ## Activation and revocation
 
 1. In the free Auth0 tenant, enable CIMD and the resource-parameter

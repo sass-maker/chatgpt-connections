@@ -16,6 +16,7 @@
     "deploy": "node ../../ops/scripts/manual-component-deploy.mjs chatgpt-connections",
     "doctor": "pnpm run build && node dist/doctor.js",
     "monitor:production": "pnpm run build && node dist/run-monitor.js",
+    "eval:submission:public": "pnpm run build && node dist/run-submission-evals.js",
     "verify:activation": "pnpm run build && node dist/verify-activation.js",
     "start:reader": "node dist/entrypoints/reader.js",
     "start:starboard": "node dist/entrypoints/starboard.js",
