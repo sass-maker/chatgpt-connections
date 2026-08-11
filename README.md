@@ -129,6 +129,15 @@ pnpm verify:activation -- \
   --gateway https://mcp.example.com
 ```
 
+For the public plugin topology, verify each private plugin on its distinct
+branded hostname (Setline remains excluded until it is published):
+
+```bash
+pnpm verify:activation -- \
+  --issuer https://tenant.us.auth0.com/ \
+  --branded
+```
+
 The JSON receipt always lists the gates it cannot prove from public metadata:
 the owner allowlist, registered Auth0 API audiences, paid-feature
 settings, a real authorization-code/PKCE exchange, refresh rotation, and grant

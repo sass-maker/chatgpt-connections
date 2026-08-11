@@ -20,6 +20,7 @@ export const MANUAL_ACTIVATION_GATES = Object.freeze([
 export interface ActivationVerificationOptions {
   issuer: string;
   gatewayOrigin?: string;
+  brandedOrigins?: boolean;
   fetchImpl?: typeof fetch;
 }
 
@@ -28,8 +29,16 @@ export interface ActivationVerificationReceipt {
   checkedAt: string;
   issuer: string;
   gatewayOrigin?: string;
+  gatewayOrigins?: string[];
   checks: Array<{ id: string; status: "passed" }>;
-  resources: Array<{ id: string; path: string; resource: string; scope: string; status: "passed" }>;
+  resources: Array<{
+    id: string;
+    origin: string;
+    path: string;
+    resource: string;
+    scope: string;
+    status: "passed";
+  }>;
   manualGates: readonly string[];
 }
 
@@ -176,6 +185,9 @@ export async function verifyActivation(
     throw new ActivationVerificationError("issuer_invalid");
   }
   const origin = options.gatewayOrigin === undefined ? undefined : gatewayOrigin(options.gatewayOrigin);
+  if (origin && options.brandedOrigins) {
+    throw new ActivationVerificationError("gateway_mode_invalid");
+  }
   const fetchImpl = options.fetchImpl ?? fetch;
   const checks: Array<{ id: string; status: "passed" }> = [];
   const resources: ActivationVerificationReceipt["resources"] = [];
@@ -194,32 +206,56 @@ export async function verifyActivation(
   if (!validJwks(jwks.body)) throw new ActivationVerificationError("auth0_jwks_incompatible");
   checks.push({ id: "auth0_rs256_jwks", status: "passed" });
 
-  if (origin) {
-    const gatewayMetadata = await fetchJson(
-      new URL(AUTHORIZATION_SERVER_METADATA_PATH, origin),
-      "gateway_metadata",
-      fetchImpl,
-    );
-    if (!validAuthorizationServerMetadata(gatewayMetadata.body, issuer) || !noStore(gatewayMetadata.headers)) {
-      throw new ActivationVerificationError("gateway_metadata_incompatible");
+  const targets = origin
+    ? PRIVATE_HOSTED_PATHS.map((path) => ({ origin, path }))
+    : options.brandedOrigins
+      ? PRIVATE_HOSTED_PATHS.flatMap((path) => {
+          const route = hostedRoute(path);
+          return route?.challengeSecret && route.hosts[0]
+            ? [{ origin: `https://${route.hosts[0]}`, path }]
+            : [];
+        })
+      : [];
+
+  if (targets.length > 0) {
+    const origins = [...new Set(targets.map((target) => target.origin))];
+    for (const targetOrigin of origins) {
+      const gatewayMetadata = await fetchJson(
+        new URL(AUTHORIZATION_SERVER_METADATA_PATH, targetOrigin),
+        "gateway_metadata",
+        fetchImpl,
+      );
+      if (!validAuthorizationServerMetadata(gatewayMetadata.body, issuer) || !noStore(gatewayMetadata.headers)) {
+        throw new ActivationVerificationError("gateway_metadata_incompatible");
+      }
     }
     checks.push({ id: "gateway_authorization_server_metadata", status: "passed" });
 
-    for (const path of PRIVATE_HOSTED_PATHS) {
-      const route = hostedRoute(path);
+    for (const target of targets) {
+      const route = hostedRoute(
+        target.path,
+        options.brandedOrigins ? new URL(target.origin).hostname : undefined,
+      );
       if (!route || route.audience !== "personal" || !route.scope) {
         throw new ActivationVerificationError("private_route_registry_invalid");
       }
-      const resource = oauthResource(route, `${origin}${path}`);
+      const resource = oauthResource(route, `${target.origin}${target.path}`);
       const metadata = await fetchJson(
-        new URL(`${PROTECTED_RESOURCE_METADATA_PREFIX}${path}`, origin),
+        new URL(`${PROTECTED_RESOURCE_METADATA_PREFIX}${target.path}`, target.origin),
         `resource_${route.id}`,
         fetchImpl,
       );
       if (!validProtectedResourceMetadata(metadata.body, resource, issuer, route.scope) || !noStore(metadata.headers)) {
         throw new ActivationVerificationError(`resource_${route.id}_metadata_incompatible`);
       }
-      resources.push({ id: route.id, path, resource, scope: route.scope, status: "passed" });
+      resources.push({
+        id: route.id,
+        origin: target.origin,
+        path: target.path,
+        resource,
+        scope: route.scope,
+        status: "passed",
+      });
     }
     checks.push({ id: "private_resource_metadata", status: "passed" });
   }
@@ -229,6 +265,7 @@ export async function verifyActivation(
     checkedAt: new Date().toISOString(),
     issuer,
     ...(origin ? { gatewayOrigin: origin } : {}),
+    ...(options.brandedOrigins ? { gatewayOrigins: [...new Set(targets.map((target) => target.origin))] } : {}),
     checks,
     resources,
     manualGates: MANUAL_ACTIVATION_GATES,

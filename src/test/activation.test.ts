@@ -61,6 +61,31 @@ function successfulFetch(seen: string[] = []): typeof fetch {
   };
 }
 
+function successfulBrandedFetch(seen: string[] = []): typeof fetch {
+  const baseFetch = successfulFetch(seen);
+  return async (input, init) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/.well-known/oauth-authorization-server") {
+      seen.push(url.href);
+      return json(authorizationServerMetadata(), true);
+    }
+    const prefix = "/.well-known/oauth-protected-resource";
+    if (url.pathname.startsWith(`${prefix}/`)) {
+      seen.push(url.href);
+      const path = url.pathname.slice(prefix.length);
+      const route = hostedRoute(path, url.hostname);
+      if (!route || route.audience !== "personal" || !route.scope) return json({ error: "not_found" });
+      return json({
+        resource: oauthResource(route, `${url.origin}${path}`),
+        authorization_servers: [issuer],
+        bearer_methods_supported: ["header"],
+        scopes_supported: [route.scope],
+      }, true);
+    }
+    return baseFetch(input, init);
+  };
+}
+
 async function rejectsWithCode(promise: Promise<unknown>, code: string): Promise<void> {
   await assert.rejects(promise, (error) => {
     assert.ok(error instanceof ActivationVerificationError);
@@ -104,6 +129,23 @@ test("activation verifier can check Auth0 before the gateway exists", async () =
   assert.equal(seen.length, 2);
 });
 
+test("activation verifier proves each published private plugin on its branded hostname", async () => {
+  const seen: string[] = [];
+  const receipt = await verifyActivation({ issuer, brandedOrigins: true, fetchImpl: successfulBrandedFetch(seen) });
+  assert.deepEqual(receipt.gatewayOrigins, [
+    "https://reader-mcp.significanthobbies.com",
+    "https://calorie-mcp.significanthobbies.com",
+    "https://anime-mcp.significanthobbies.com",
+  ]);
+  assert.deepEqual(receipt.resources.map(({ id, origin }) => ({ id, origin })), [
+    { id: "reader", origin: "https://reader-mcp.significanthobbies.com" },
+    { id: "calorie", origin: "https://calorie-mcp.significanthobbies.com" },
+    { id: "anime-list", origin: "https://anime-mcp.significanthobbies.com" },
+  ]);
+  assert.equal(receipt.resources.some(({ id }) => id === "setline"), false);
+  assert.equal(seen.length, 8);
+});
+
 test("activation verifier rejects non-Auth0 domains and malformed gateway origins before fetching", async () => {
   let calls = 0;
   const fetchImpl: typeof fetch = async () => {
@@ -117,6 +159,10 @@ test("activation verifier rejects non-Auth0 domains and malformed gateway origin
   await rejectsWithCode(
     verifyActivation({ issuer, gatewayOrigin: "https://mcp.example.com/path", fetchImpl }),
     "gateway_origin_invalid",
+  );
+  await rejectsWithCode(
+    verifyActivation({ issuer, gatewayOrigin: gateway, brandedOrigins: true, fetchImpl }),
+    "gateway_mode_invalid",
   );
   assert.equal(calls, 0);
 });
