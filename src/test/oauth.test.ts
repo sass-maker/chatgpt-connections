@@ -16,6 +16,7 @@ import {
   handleOAuthMetadataRequest,
   verifyAuth0AccessToken,
 } from "../oauth.js";
+import worker from "../worker-entry.js";
 
 const issuer = "https://fleet-test.us.auth0.com/";
 const ownerId = "google-oauth2|owner123456";
@@ -195,4 +196,25 @@ test("authorization-server proxy fails closed unless Auth0 advertises MCP compat
   assert.ok(rejected);
   assert.equal(rejected.status, 503);
   assert.equal(rejected.headers.get("retry-after"), "30");
+});
+
+test("Worker entrypoint invokes the runtime fetch with its global receiver", async () => {
+  const originalFetch = globalThis.fetch;
+  let called = false;
+  globalThis.fetch = (function (this: unknown) {
+    assert.equal(this, globalThis);
+    called = true;
+    return Promise.resolve(Response.json(authorizationServerMetadata()));
+  }) as typeof fetch;
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://mcp.example/.well-known/oauth-authorization-server"),
+      env as Env,
+    );
+    assert.equal(response.status, 200);
+    assert.equal(called, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

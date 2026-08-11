@@ -27,11 +27,12 @@ function authorizationUnavailable(): Response {
 
 export default {
   async fetch(request: Request, env: HostedWorkerEnv): Promise<Response> {
-    const metadata = await handleOAuthMetadataRequest(request, env);
+    const fetchImpl: typeof fetch = (input, init) => globalThis.fetch(input, init);
+    const metadata = await handleOAuthMetadataRequest(request, env, fetchImpl);
     if (metadata) return metadata;
 
     const route = hostedRoute(new URL(request.url).pathname);
-    if (!route || route.audience === "public") return handleHostedRequest(request);
+    if (!route || route.audience === "public") return handleHostedRequest(request, fetchImpl);
 
     const authorization = await authorizeOAuthRequest(request, route, env);
     if (authorization.status === "unavailable" || authorization.status === "misconfigured") {
@@ -39,7 +40,7 @@ export default {
     }
     if (authorization.status !== "authorized") return handleHostedRequest(request);
 
-    return handleHostedRequest(request, fetch, {
+    return handleHostedRequest(request, fetchImpl, {
       grant: authorization.grant,
       productToken: productToken(env, route),
     });
