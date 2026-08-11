@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { HOSTED_ROUTES, type HostedRouteDefinition } from "../hosted.js";
+import { HOSTED_ROUTES, oauthResource, type HostedRouteDefinition } from "../hosted.js";
 import type { OAuthGrantProps } from "../oauth.js";
 import { handleHostedRequest } from "../worker.js";
 
@@ -59,7 +59,7 @@ function authorizationFor(path: string, overrides: Partial<OAuthGrantProps> = {}
     grant: {
       subject: "google-oauth2|owner-subject",
       product: route.id,
-      resource: `https://mcp.example${path}`,
+      resource: oauthResource(route, `https://mcp.example${path}`),
       scope: route.scope!,
       ...overrides,
     },

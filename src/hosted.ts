@@ -8,6 +8,7 @@ interface HostedRouteBase {
   hosts: readonly string[];
   challengeSecret?: OpenAIChallengeSecret;
   authMode?: "federated" | "owner-token";
+  oauthAudience?: string;
   scope?: string;
   tokenSecret?: PrivateTokenSecret;
 }
@@ -93,6 +94,7 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     hosts: ["reader-mcp.significanthobbies.com"],
     challengeSecret: "OPENAI_CHALLENGE_READER",
     authMode: "federated",
+    oauthAudience: "https://mcp.significanthobbies.com/reader/mcp",
     scope: "reader.read",
     app: APP_DEFINITIONS.reader,
   },
@@ -103,6 +105,7 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     hosts: ["calorie-mcp.significanthobbies.com"],
     challengeSecret: "OPENAI_CHALLENGE_CALORIE",
     authMode: "federated",
+    oauthAudience: "https://mcp.significanthobbies.com/calorie/mcp",
     scope: "calorie.read",
     app: APP_DEFINITIONS.calorie,
   },
@@ -123,6 +126,7 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     hosts: ["anime-mcp.significanthobbies.com"],
     challengeSecret: "OPENAI_CHALLENGE_ANIME_LIST",
     authMode: "federated",
+    oauthAudience: "https://mcp.significanthobbies.com/anime-list/mcp",
     scope: "anime-list.read",
     serverName: "anime-list-by-significant-hobbies",
     upstreamUrl: "https://anime.significanthobbies.com/api/mcp",
@@ -194,4 +198,8 @@ export function openAiChallengeSecret(hostname: string): OpenAIChallengeSecret |
     if (route.challengeSecret && route.hosts.includes(hostname)) return route.challengeSecret;
   }
   return undefined;
+}
+
+export function oauthResource(route: HostedRouteDefinition, fallback: string): string {
+  return route.oauthAudience ?? fallback;
 }

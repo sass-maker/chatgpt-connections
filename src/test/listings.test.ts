@@ -8,6 +8,7 @@ interface Listing {
   id: string;
   logo: string;
   mcpUrl: string;
+  oauthResource?: string;
   challengeSecret: string;
   starterPrompts: string[];
   tests: { positive: unknown[]; negative: unknown[] };
@@ -49,5 +50,6 @@ test("all seven public listing packages are complete and independently verifiabl
     assert.equal(route.id, listing.id);
     assert.deepEqual(route.hosts, [url.hostname]);
     assert.equal(route.challengeSecret, listing.challengeSecret);
+    assert.equal(route.oauthAudience, listing.oauthResource);
   }
 });

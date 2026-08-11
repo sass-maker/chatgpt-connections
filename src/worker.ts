@@ -3,6 +3,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import {
   HOSTED_ROUTES,
   hostedRoute,
+  oauthResource,
   type HostedRouteDefinition,
 } from "./hosted.js";
 import type { HostedWorkerEnv, OAuthGrantProps } from "./oauth.js";
@@ -226,7 +227,7 @@ function authorizationMatches(
   const { grant } = authorization;
   return grant.product === route.id &&
     grant.scope === route.scope &&
-    grant.resource === exactResource(request) &&
+    grant.resource === oauthResource(route, exactResource(request)) &&
     typeof grant.subject === "string" && grant.subject.length > 0 && grant.subject.length <= 512;
 }
 

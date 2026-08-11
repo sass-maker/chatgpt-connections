@@ -8,6 +8,7 @@ import {
 
 import {
   hostedRoute,
+  oauthResource,
   type OpenAIChallengeSecret,
   type HostedRouteDefinition,
 } from "./hosted.js";
@@ -164,7 +165,7 @@ export async function verifyAuth0AccessToken(
 ): Promise<OAuthGrantProps> {
   if (route.audience !== "personal" || !route.scope) throw new Auth0ConfigurationError();
   const issuer = auth0Issuer(env);
-  const resource = exactResource(request);
+  const resource = oauthResource(route, exactResource(request));
   const { payload } = await jwtVerify<Auth0AccessClaims>(token, getKey ?? remoteJwks(issuer), {
     algorithms: ["RS256"],
     audience: resource,
@@ -244,8 +245,9 @@ function protectedResourceMetadata(
     return Response.json({ error: "not_found" }, { status: 404, headers: noStoreHeaders() });
   }
   const url = new URL(request.url);
+  const routeUrl = `${url.origin}${url.pathname.slice(PROTECTED_RESOURCE_METADATA_PREFIX.length)}`;
   return Response.json({
-    resource: `${url.origin}${url.pathname.slice(PROTECTED_RESOURCE_METADATA_PREFIX.length)}`,
+    resource: oauthResource(route, routeUrl),
     authorization_servers: [issuer],
     bearer_methods_supported: ["header"],
     scopes_supported: [route.scope],

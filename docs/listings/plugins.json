@@ -16,6 +16,7 @@
       "logo": "assets/reader.png",
       "mcpUrl": "https://reader-mcp.significanthobbies.com/reader/mcp",
       "authentication": "OAuth",
+      "oauthResource": "https://mcp.significanthobbies.com/reader/mcp",
       "challengeSecret": "OPENAI_CHALLENGE_READER",
       "starterPrompts": [
         "Find saved reading about MCP authentication.",
@@ -52,6 +53,7 @@
       "logo": "assets/calorie.png",
       "mcpUrl": "https://calorie-mcp.significanthobbies.com/calorie/mcp",
       "authentication": "OAuth",
+      "oauthResource": "https://mcp.significanthobbies.com/calorie/mcp",
       "challengeSecret": "OPENAI_CHALLENGE_CALORIE",
       "starterPrompts": [
         "Show my nutrition totals for yesterday.",
@@ -88,6 +90,7 @@
       "logo": "assets/anime-list.png",
       "mcpUrl": "https://anime-mcp.significanthobbies.com/anime-list/mcp",
       "authentication": "OAuth",
+      "oauthResource": "https://mcp.significanthobbies.com/anime-list/mcp",
       "challengeSecret": "OPENAI_CHALLENGE_ANIME_LIST",
       "starterPrompts": [
         "Find highly rated mystery anime from the 2000s.",

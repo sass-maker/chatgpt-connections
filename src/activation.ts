@@ -1,4 +1,4 @@
-import { PRIVATE_HOSTED_PATHS, hostedRoute } from "./hosted.js";
+import { PRIVATE_HOSTED_PATHS, hostedRoute, oauthResource } from "./hosted.js";
 import { auth0Issuer, validAuthorizationServerMetadata } from "./oauth.js";
 
 const MAX_METADATA_BYTES = 65_536;
@@ -210,7 +210,7 @@ export async function verifyActivation(
       if (!route || route.audience !== "personal" || !route.scope) {
         throw new ActivationVerificationError("private_route_registry_invalid");
       }
-      const resource = `${origin}${path}`;
+      const resource = oauthResource(route, `${origin}${path}`);
       const metadata = await fetchJson(
         new URL(`${PROTECTED_RESOURCE_METADATA_PREFIX}${path}`, origin),
         `resource_${route.id}`,

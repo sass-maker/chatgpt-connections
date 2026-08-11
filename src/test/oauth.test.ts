@@ -21,7 +21,7 @@ import worker from "../worker-entry.js";
 
 const issuer = "https://fleet-test.us.auth0.com/";
 const ownerId = "google-oauth2|owner123456";
-const resource = "https://mcp.example/reader/mcp";
+const resource = "https://mcp.significanthobbies.com/reader/mcp";
 const scope = "reader.read";
 const route = hostedRoute("/reader/mcp")!;
 const env = {
@@ -82,7 +82,9 @@ test("Auth0 issuer accepts only the free hosted Auth0 tenant domain", () => {
 test("federated Auth0 verification binds issuer, audience, Google subject, lifetime, and permission", async () => {
   const fixture = await signingFixture();
   const validToken = await fixture.token();
-  const request = new Request(resource, { headers: { Authorization: `Bearer ${validToken}` } });
+  const request = new Request("https://reader-mcp.significanthobbies.com/reader/mcp", {
+    headers: { Authorization: `Bearer ${validToken}` },
+  });
   const grant = await verifyAuth0AccessToken(validToken, request, route, env, fixture.getKey);
   assert.deepEqual(grant, {
     subject: ownerId,

@@ -48,14 +48,15 @@ proxies Auth0 authorization-server discovery for older clients, validates
 Auth0 JWTs with `jose` against Auth0's remote JWKS, and forwards only a verified
 Reader, Calorie, or Anime List caller token to that matching product.
 
-Every federated private request must have the exact Auth0 issuer and branded
-route URL in `aud`, an RS256 signature, a lifetime no longer than one hour, a
-supported federated subject, and the route's single read permission. The
-product repeats those checks and maps the subject to its own account; a missing
-account returns 403 without an owner fallback. OAuth bearer values and private
-response bodies are not logged or cached. No OAuth KV, product PAT, Auth0
-Management API token, client secret, cookie key, or owner email is needed by
-the gateway for those three products.
+Every federated private request must have the exact Auth0 issuer, the route's
+fixed canonical product resource in `aud`, an RS256 signature, a lifetime no
+longer than one hour, a supported federated subject, and the route's single
+read permission. Protected-resource metadata on each distinct public hostname
+advertises that canonical resource. The product repeats the checks and maps the
+subject to its own account; a missing account returns 403 without an owner
+fallback. OAuth bearer values and private response bodies are not logged or
+cached. No OAuth KV, product PAT, Auth0 Management API token, client secret,
+cookie key, or owner email is needed by the gateway for those three products.
 
 The Auth0 environment is cost-gated: use its standard hosted `*.auth0.com`
 tenant domain, stay within the free plan, and do not enable a custom domain or
@@ -153,7 +154,7 @@ Generated binding types come from `wrangler types`; rerun
 ## Activation and revocation
 
 1. In the free Auth0 tenant, enable CIMD and the resource-parameter
-   compatibility profile, create one API for each exact branded private route
+   compatibility profile, create one API for each exact canonical private resource
    with one matching read permission, add a default third-party user grant,
    request `offline_access`, and keep open dynamic client registration
    disabled. Set each API access-token lifetime to one hour or less.

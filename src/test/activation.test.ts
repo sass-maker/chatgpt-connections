@@ -8,7 +8,7 @@ import {
   MANUAL_ACTIVATION_GATES,
   verifyActivation,
 } from "../activation.js";
-import { PRIVATE_HOSTED_PATHS, PRIVATE_HOSTED_SCOPES, hostedRoute } from "../hosted.js";
+import { PRIVATE_HOSTED_PATHS, PRIVATE_HOSTED_SCOPES, hostedRoute, oauthResource } from "../hosted.js";
 
 const issuer = "https://fleet-test.us.auth0.com/";
 const gateway = "https://mcp.example.com";
@@ -51,7 +51,7 @@ function successfulFetch(seen: string[] = []): typeof fetch {
       const route = hostedRoute(path);
       if (!route || route.audience !== "personal" || !route.scope) return json({ error: "not_found" });
       return json({
-        resource: `${gateway}${path}`,
+        resource: oauthResource(route, `${gateway}${path}`),
         authorization_servers: [issuer],
         bearer_methods_supported: ["header"],
         scopes_supported: [route.scope],
