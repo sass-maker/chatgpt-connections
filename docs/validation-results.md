@@ -69,7 +69,7 @@ Application-side activation completed on 2026-08-11:
   to its operator-local FastAPI corpus. Setline correctly fails closed while
   its credential is absent.
 
-The seven-plugin production surface was released on 2026-08-11. Reader,
+The initial seven-plugin production surface was released on 2026-08-11. Reader,
 Calorie, and Anime List run product-side federated JWT verification from their
 reviewed `main` revisions. Gateway version
 `514b8da4-9775-4a25-bbfb-35a5a8a469ef` was deployed from clean, green `main`
@@ -77,6 +77,9 @@ SHA `5c5fc87708bef0fd0e7ec40de96477cfcba8a5f5` and serves seven distinct
 branded domains. The branded activation verifier passed Auth0 discovery,
 RS256 JWKS, all three gateway metadata proxies, and the exact Reader, Calorie,
 and Anime List protected-resource documents.
+
+The current attributable release and live submission-evaluation evidence are
+maintained in [`production-release.md`](production-release.md).
 
 All seven branded health endpoints returned 200. Public MCP initialization and
 tool discovery succeeded for Starboard, High Signal, Significant Hobbies, and
