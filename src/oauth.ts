@@ -320,7 +320,7 @@ async function proxyAuthorizationServerMetadata(
   try {
     const upstream = await fetchImpl(new URL(AUTHORIZATION_SERVER_METADATA_PATH, issuer), {
       headers: { Accept: "application/json" },
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(METADATA_FETCH_TIMEOUT_MS),
     });
     if (!upstream.ok) throw new Error("metadata_unavailable");
@@ -333,6 +333,7 @@ async function proxyAuthorizationServerMetadata(
     console.error(JSON.stringify({
       message: "auth0_metadata_unavailable",
       errorType: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message.slice(0, 256) : undefined,
     }));
     return Response.json(
       { error: "authorization_server_unavailable" },

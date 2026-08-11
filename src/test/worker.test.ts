@@ -205,6 +205,24 @@ test("OAuth grants are bound to one exact product, scope, and resource", async (
   assert.deepEqual([wrongProduct.status, wrongScope.status, wrongResource.status], [401, 401, 401]);
 });
 
+test("an unavailable owner-token product credential fails closed before upstream", async () => {
+  let called = false;
+  const response = await handleHostedRequest(
+    requestFor("/setline/mcp", initializeRequest()),
+    async () => {
+      called = true;
+      return Response.json({ items: [] });
+    },
+    { ...authorizationFor("/setline/mcp"), upstreamToken: undefined },
+  );
+
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("retry-after"), "300");
+  assert.equal(called, false);
+  assert.match(JSON.stringify(await json(response)), /temporarily unavailable/u);
+});
+
 test("private OAuth tokens remain isolated under concurrent calls and propagate end to end", async () => {
   const seen: Array<{ authorization: string | null; url: string }> = [];
   const fetchImpl: typeof fetch = async (input, init) => {
@@ -249,7 +267,7 @@ test("private OAuth tokens remain isolated under concurrent calls and propagate 
 });
 
 test("Anime List proxy fixes the upstream URL and forwards the verified OAuth bearer", async () => {
-  const calls: Array<{ url: string; authorization: string | null; method: string }> = [];
+  const calls: Array<{ url: string; authorization: string | null; method: string; redirect: RequestRedirect }> = [];
   const response = await handleHostedRequest(
     requestFor("/anime-list/mcp", initializeRequest(), { authorization: "Bearer oauth-chatgpt" }),
     async (input, init) => {
@@ -258,6 +276,7 @@ test("Anime List proxy fixes the upstream URL and forwards the verified OAuth be
         url: request.url,
         authorization: request.headers.get("authorization"),
         method: request.method,
+        redirect: request.redirect,
       });
       return nativeMcpResponse(request);
     },
@@ -268,6 +287,7 @@ test("Anime List proxy fixes the upstream URL and forwards the verified OAuth be
     url: "https://anime.significanthobbies.com/api/mcp",
     authorization: "Bearer animelistHeader.oauthPayload.oauthSignature",
     method: "POST",
+    redirect: "manual",
   }]);
   assert.equal(JSON.stringify(await json(response)).includes("oauth-chatgpt"), false);
 });
@@ -289,6 +309,18 @@ test("branded hosts expose only their assigned plugin routes", async () => {
   );
   assert.equal(allowed.status, 200);
   assert.equal(isolated.status, 404);
+});
+
+test("Anime List proxy rejects upstream redirects without forwarding them", async () => {
+  const response = await handleHostedRequest(
+    requestFor("/anime-list/mcp", initializeRequest()),
+    async () => new Response(null, { status: 302, headers: { Location: "https://elsewhere.example/" } }),
+    authorizationFor("/anime-list/mcp"),
+  );
+
+  assert.equal(response.status, 502);
+  assert.equal(response.headers.has("location"), false);
+  assert.match(JSON.stringify(await json(response)), /redirects are not allowed/u);
 });
 
 test("public routes reject credentials and use anonymous upstream reads", async () => {

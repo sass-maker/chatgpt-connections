@@ -30,11 +30,14 @@ of scope.
 - 2026-08-11 — Configured the free Auth0 tenant, verified the Google owner,
   enabled CIMD/resource compatibility, and created four exact one-hour API
   audiences with default third-party user grants.
+- 2026-08-11 — Released the SHA-tagged gateway, verified all OAuth/resource
+  metadata, initialized all eight routes, and completed representative public
+  tool calls without retaining record bodies.
 
 ## Products
 
-- `fleet-chatgpt-connections` — Cloudflare Worker source; production deployment
-  is pending Worker secrets and the guarded release path.
+- `fleet-chatgpt-connections` — Live Cloudflare Worker at the account's
+  `workers.dev` origin with eight fixed MCP routes.
 - Eight independent MCP route definitions: Reader, Calorie, Setline, Anime
   List, Starboard, High Signal, Significant Hobbies, and Research Papers.
 
@@ -48,6 +51,11 @@ of scope.
   responses, and secret-safe logging.
 - Exact per-tool OAuth or no-auth security declarations.
 - Path-scoped CI and a clean-main, green-CI, SHA-tagged manual deploy gate.
+- Free Auth0 tenant activation with CIMD, PKCE/refresh metadata, exact
+  resource audiences, one-hour RS256 tokens, owner allowlisting, and
+  third-party user grants; DCR, custom domains, and paid features stay off.
+- Production metadata/JWKS verification and status-only public/private smoke
+  receipts. Setline remains fail-closed until its first owner token exists.
 
 ## Work queue
 

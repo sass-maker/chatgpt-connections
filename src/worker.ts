@@ -21,13 +21,22 @@ class ResponseTooLargeError extends Error {}
 
 interface HostedRequestAuthorization {
   grant: OAuthGrantProps;
-  upstreamToken: string;
+  upstreamToken: string | undefined;
 }
 
 function jsonRpcError(status: number, code: number, message: string, headers?: HeadersInit): Response {
   return Response.json(
     { jsonrpc: "2.0", error: { code, message }, id: null },
     { status, headers: { "Content-Type": "application/json", ...headers } },
+  );
+}
+
+function productUnavailable(): Response {
+  return jsonRpcError(
+    503,
+    -32000,
+    "This product connection is temporarily unavailable.",
+    { "Retry-After": "300" },
   );
 }
 
@@ -230,7 +239,7 @@ function oauthChallenge(request: Request, route: HostedRouteDefinition): Respons
   });
 }
 
-function validUpstreamToken(route: HostedRouteDefinition, value: string): boolean {
+function validUpstreamToken(route: HostedRouteDefinition, value: string | undefined): boolean {
   if (!value) return false;
   if (route.authMode === "federated") {
     return value.length <= MAX_FEDERATED_TOKEN_BYTES &&
@@ -280,9 +289,13 @@ async function handleNative(
     method: "POST",
     headers,
     body,
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(NATIVE_TIMEOUT_MS),
   });
+  if (response.status >= 300 && response.status < 400) {
+    await response.body?.cancel();
+    return jsonRpcError(502, -32603, "Upstream MCP redirects are not allowed.");
+  }
   return advertiseSecuritySchemes(await boundedResponse(response), route);
 }
 
@@ -323,13 +336,14 @@ export async function handleHostedRequest(
         route,
       );
     }
-  } else if (!authorizationMatches(request, route, authorization) ||
-      !validUpstreamToken(route, authorization.upstreamToken)) {
+  } else if (!authorizationMatches(request, route, authorization)) {
     return withProtocolHeaders(oauthChallenge(request, route), request, route);
+  } else if (!validUpstreamToken(route, authorization.upstreamToken)) {
+    return withProtocolHeaders(productUnavailable(), request, route);
   }
 
   try {
-    const token = route.audience === "personal" ? authorization!.upstreamToken : undefined;
+    const token = route.audience === "personal" ? authorization!.upstreamToken! : undefined;
     const response = route.kind === "native"
       ? await handleNative(request, route, fetchImpl, token!)
       : await handleAdapter(request, route, fetchImpl, token);
@@ -363,7 +377,7 @@ export async function handleHostedRequest(
   }
 }
 
-export function productToken(env: HostedWorkerEnv, route: HostedRouteDefinition): string {
+export function productToken(env: HostedWorkerEnv, route: HostedRouteDefinition): string | undefined {
   switch (route.tokenSecret) {
     case "SETLINE_MCP_TOKEN": return env.SETLINE_MCP_TOKEN;
     default: return "";
