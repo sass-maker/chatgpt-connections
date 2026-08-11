@@ -5,15 +5,13 @@ export type HostedAudience = "personal" | "public";
 interface HostedRouteBase {
   id: string;
   audience: HostedAudience;
+  hosts: readonly string[];
+  authMode?: "federated" | "owner-token";
   scope?: string;
   tokenSecret?: PrivateTokenSecret;
 }
 
-export type PrivateTokenSecret =
-  | "READER_MCP_TOKEN"
-  | "CALORIE_MCP_TOKEN"
-  | "SETLINE_MCP_TOKEN"
-  | "ANIME_LIST_MCP_TOKEN";
+export type PrivateTokenSecret = "SETLINE_MCP_TOKEN";
 
 export interface AdapterHostedRouteDefinition extends HostedRouteBase {
   kind: "adapter";
@@ -23,8 +21,8 @@ export interface AdapterHostedRouteDefinition extends HostedRouteBase {
 export interface NativeHostedRouteDefinition extends HostedRouteBase {
   kind: "native";
   audience: "personal";
+  authMode: "federated";
   scope: string;
-  tokenSecret: "ANIME_LIST_MCP_TOKEN";
   serverName: string;
   upstreamUrl: string;
 }
@@ -82,22 +80,26 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "reader",
     kind: "adapter",
     audience: "personal",
+    hosts: ["mcp.significanthobbies.com"],
+    authMode: "federated",
     scope: "reader.read",
-    tokenSecret: "READER_MCP_TOKEN",
     app: APP_DEFINITIONS.reader,
   },
   "/calorie/mcp": {
     id: "calorie",
     kind: "adapter",
     audience: "personal",
+    hosts: ["mcp.significanthobbies.com"],
+    authMode: "federated",
     scope: "calorie.read",
-    tokenSecret: "CALORIE_MCP_TOKEN",
     app: APP_DEFINITIONS.calorie,
   },
   "/setline/mcp": {
     id: "setline",
     kind: "adapter",
     audience: "personal",
+    hosts: ["mcp.significanthobbies.com"],
+    authMode: "owner-token",
     scope: "setline.read",
     tokenSecret: "SETLINE_MCP_TOKEN",
     app: APP_DEFINITIONS.setline,
@@ -106,8 +108,9 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "anime-list",
     kind: "native",
     audience: "personal",
+    hosts: ["mcp.significanthobbies.com"],
+    authMode: "federated",
     scope: "anime-list.read",
-    tokenSecret: "ANIME_LIST_MCP_TOKEN",
     serverName: "anime-list-by-significant-hobbies",
     upstreamUrl: "https://anime.significanthobbies.com/api/mcp",
   },
@@ -115,24 +118,28 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     id: "starboard",
     kind: "adapter",
     audience: "public",
+    hosts: ["mcp.codevetter.com"],
     app: APP_DEFINITIONS.starboard,
   },
   "/high-signal/mcp": {
     id: "high-signal",
     kind: "adapter",
     audience: "public",
+    hosts: ["mcp.highsignal.app"],
     app: APP_DEFINITIONS["high-signal"],
   },
   "/significant-hobbies/mcp": {
     id: "significant-hobbies",
     kind: "adapter",
     audience: "public",
+    hosts: ["mcp.significanthobbies.com"],
     app: APP_DEFINITIONS["significant-hobbies"],
   },
   "/research-papers/mcp": {
     id: "research-papers",
     kind: "adapter",
     audience: "public",
+    hosts: ["mcp.highsignal.app"],
     app: hostedResearchPapers,
   },
 });
@@ -149,6 +156,18 @@ export const PRIVATE_HOSTED_SCOPES = Object.freeze(
     .map((route) => route.scope!),
 );
 
-export function hostedRoute(pathname: string): HostedRouteDefinition | undefined {
-  return HOSTED_ROUTES[pathname];
+function compatibilityHost(hostname: string): boolean {
+  return hostname === "mcp.example" ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".workers.dev");
+}
+
+export function hostedRoute(
+  pathname: string,
+  hostname?: string,
+): HostedRouteDefinition | undefined {
+  const route = HOSTED_ROUTES[pathname];
+  if (!route || !hostname || compatibilityHost(hostname) || route.hosts.includes(hostname)) return route;
+  return undefined;
 }

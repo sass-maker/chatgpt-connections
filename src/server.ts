@@ -33,6 +33,7 @@ export interface ServerBuildOptions {
   baseUrl?: string;
   readProcessEnvironment?: boolean;
   securitySchemes?: readonly ToolSecurityScheme[];
+  validateTokenPrefix?: boolean;
 }
 
 export type ToolSecurityScheme =
@@ -52,7 +53,9 @@ export function buildServerForApp(
   const client = new ReadClient(app.operations, {
     baseUrl: options.baseUrl?.trim() || environmentBaseUrl || app.baseUrl,
     ...(token ? { token } : {}),
-    ...(app.tokenPrefix ? { tokenPrefix: app.tokenPrefix } : {}),
+    ...(app.tokenPrefix && options.validateTokenPrefix !== false
+      ? { tokenPrefix: app.tokenPrefix }
+      : {}),
     ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
   });
   const server = new McpServer(

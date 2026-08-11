@@ -47,14 +47,9 @@ async function json(response: Response): Promise<Record<string, unknown>> {
   return (await response.json()) as Record<string, unknown>;
 }
 
-function productToken(route: HostedRouteDefinition): string {
-  switch (route.id) {
-    case "reader": return "rdr_worker-secret";
-    case "calorie": return "calorie_read_worker-secret";
-    case "setline": return "setline_read_worker-secret";
-    case "anime-list": return "anime_list_worker-secret";
-    default: throw new Error("public routes do not have product tokens");
-  }
+function upstreamToken(route: HostedRouteDefinition): string {
+  if (route.id === "setline") return "setline_read_worker-secret";
+  return `${route.id.replaceAll("-", "")}Header.oauthPayload.oauthSignature`;
 }
 
 function authorizationFor(path: string, overrides: Partial<OAuthGrantProps> = {}) {
@@ -62,13 +57,13 @@ function authorizationFor(path: string, overrides: Partial<OAuthGrantProps> = {}
   assert.equal(route.audience, "personal");
   return {
     grant: {
-      ownerId: "owner-subject",
+      subject: "google-oauth2|owner-subject",
       product: route.id,
       resource: `https://mcp.example${path}`,
       scope: route.scope!,
       ...overrides,
     },
-    productToken: productToken(route),
+    upstreamToken: upstreamToken(route),
   };
 }
 
@@ -210,7 +205,7 @@ test("OAuth grants are bound to one exact product, scope, and resource", async (
   assert.deepEqual([wrongProduct.status, wrongScope.status, wrongResource.status], [401, 401, 401]);
 });
 
-test("private product secrets remain isolated under concurrent OAuth calls", async () => {
+test("private OAuth tokens remain isolated under concurrent calls and propagate end to end", async () => {
   const seen: Array<{ authorization: string | null; url: string }> = [];
   const fetchImpl: typeof fetch = async (input, init) => {
     const authorization = new Headers(init?.headers).get("authorization");
@@ -218,7 +213,7 @@ test("private product secrets remain isolated under concurrent OAuth calls", asy
     seen.push({ authorization, url });
     await Promise.resolve();
     return Response.json({
-      items: [{ title: authorization?.startsWith("Bearer rdr_") ? "reader-result" : "calorie-result" }],
+      items: [{ title: authorization?.includes("readerHeader") ? "reader-result" : "calorie-result" }],
     });
   };
   const readerCall = {
@@ -243,17 +238,17 @@ test("private product secrets remain isolated under concurrent OAuth calls", asy
   ]);
   const bodies = [JSON.stringify(await json(reader)), JSON.stringify(await json(calorie))];
   assert.deepEqual(new Set(seen.map((item) => item.authorization)), new Set([
-    "Bearer rdr_worker-secret",
-    "Bearer calorie_read_worker-secret",
+    "Bearer readerHeader.oauthPayload.oauthSignature",
+    "Bearer calorieHeader.oauthPayload.oauthSignature",
   ]));
   assert.equal(bodies[0]!.includes("reader-result"), true);
   assert.equal(bodies[0]!.includes("calorie-result"), false);
   assert.equal(bodies[1]!.includes("calorie-result"), true);
   assert.equal(bodies[1]!.includes("reader-result"), false);
-  assert.equal(bodies.some((body) => body.includes("worker-secret") || body.includes("oauth-")), false);
+  assert.equal(bodies.some((body) => body.includes("oauthPayload") || body.includes("oauth-")), false);
 });
 
-test("Anime List proxy fixes the upstream URL and replaces the OAuth bearer with its Worker secret", async () => {
+test("Anime List proxy fixes the upstream URL and forwards the verified OAuth bearer", async () => {
   const calls: Array<{ url: string; authorization: string | null; method: string }> = [];
   const response = await handleHostedRequest(
     requestFor("/anime-list/mcp", initializeRequest(), { authorization: "Bearer oauth-chatgpt" }),
@@ -271,10 +266,29 @@ test("Anime List proxy fixes the upstream URL and replaces the OAuth bearer with
   assert.equal(response.status, 200);
   assert.deepEqual(calls, [{
     url: "https://anime.significanthobbies.com/api/mcp",
-    authorization: "Bearer anime_list_worker-secret",
+    authorization: "Bearer animelistHeader.oauthPayload.oauthSignature",
     method: "POST",
   }]);
   assert.equal(JSON.stringify(await json(response)).includes("oauth-chatgpt"), false);
+});
+
+test("branded hosts expose only their assigned plugin routes", async () => {
+  const allowed = await handleHostedRequest(
+    new Request("https://mcp.highsignal.app/high-signal/mcp", {
+      method: "POST",
+      headers: { Accept: "application/json, text/event-stream", "Content-Type": "application/json" },
+      body: JSON.stringify(initializeRequest()),
+    }),
+  );
+  const isolated = await handleHostedRequest(
+    new Request("https://mcp.highsignal.app/starboard/mcp", {
+      method: "POST",
+      headers: { Accept: "application/json, text/event-stream", "Content-Type": "application/json" },
+      body: JSON.stringify(initializeRequest()),
+    }),
+  );
+  assert.equal(allowed.status, 200);
+  assert.equal(isolated.status, 404);
 });
 
 test("public routes reject credentials and use anonymous upstream reads", async () => {

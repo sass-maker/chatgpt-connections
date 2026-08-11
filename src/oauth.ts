@@ -20,7 +20,7 @@ const AUTHORIZATION_SERVER_METADATA_PATH = "/.well-known/oauth-authorization-ser
 const PROTECTED_RESOURCE_METADATA_PREFIX = "/.well-known/oauth-protected-resource";
 
 export interface OAuthGrantProps {
-  ownerId: string;
+  subject: string;
   product: string;
   resource: string;
   scope: string;
@@ -29,7 +29,7 @@ export interface OAuthGrantProps {
 export type HostedWorkerEnv = Env;
 
 export type OAuthAuthorizationResult =
-  | { status: "authorized"; grant: OAuthGrantProps }
+  | { status: "authorized"; accessToken: string; grant: OAuthGrantProps }
   | { status: "missing" | "invalid" }
   | { status: "unavailable" | "misconfigured" };
 
@@ -138,11 +138,15 @@ function grantedPermissions(payload: Auth0AccessClaims): Set<string> {
 
 function validAuth0Claims(
   payload: Auth0AccessClaims,
-  expectedOwnerId: string,
+  route: HostedRouteDefinition,
+  expectedOwnerId: string | undefined,
   expectedScope: string,
 ): payload is Auth0AccessClaims & { exp: number; iat: number; sub: string } {
+  const validSubject = route.authMode === "owner-token"
+    ? payload.sub === expectedOwnerId
+    : typeof payload.sub === "string" && /^google-oauth2\|[A-Za-z0-9._-]{3,256}$/u.test(payload.sub);
   return typeof payload.sub === "string" &&
-    payload.sub === expectedOwnerId &&
+    validSubject &&
     typeof payload.exp === "number" &&
     typeof payload.iat === "number" &&
     payload.exp > payload.iat &&
@@ -167,12 +171,12 @@ export async function verifyAuth0AccessToken(
     issuer,
     requiredClaims: ["iss", "aud", "sub", "exp", "iat"],
   });
-  const ownerId = ownerUserId(env);
-  if (!validAuth0Claims(payload, ownerId, route.scope)) {
+  const expectedOwnerId = route.authMode === "owner-token" ? ownerUserId(env) : undefined;
+  if (!validAuth0Claims(payload, route, expectedOwnerId, route.scope)) {
     throw new joseErrors.JWTClaimValidationFailed("required Auth0 claims are invalid", payload, "sub");
   }
   return {
-    ownerId,
+    subject: payload.sub,
     product: route.id,
     resource,
     scope: route.scope,
@@ -195,7 +199,11 @@ export async function authorizeOAuthRequest(
   if (token === undefined) return { status: "missing" };
   if (token === null) return { status: "invalid" };
   try {
-    return { status: "authorized", grant: await verifyAuth0AccessToken(token, request, route, env, getKey) };
+    return {
+      status: "authorized",
+      accessToken: token,
+      grant: await verifyAuth0AccessToken(token, request, route, env, getKey),
+    };
   } catch (error) {
     if (error instanceof Auth0ConfigurationError) {
       console.error(JSON.stringify({ message: "auth0_auth_misconfigured", path: new URL(request.url).pathname }));
@@ -218,9 +226,9 @@ export async function authorizeOAuthRequest(
   }
 }
 
-function protectedMetadataRoute(pathname: string): HostedRouteDefinition | undefined {
+function protectedMetadataRoute(pathname: string, hostname: string): HostedRouteDefinition | undefined {
   if (!pathname.startsWith(`${PROTECTED_RESOURCE_METADATA_PREFIX}/`)) return undefined;
-  const route = hostedRoute(pathname.slice(PROTECTED_RESOURCE_METADATA_PREFIX.length));
+  const route = hostedRoute(pathname.slice(PROTECTED_RESOURCE_METADATA_PREFIX.length), hostname);
   return route?.audience === "personal" ? route : undefined;
 }
 
@@ -229,7 +237,8 @@ function protectedResourceMetadata(
   route: HostedRouteDefinition,
   issuer: string,
 ): Response {
-  const routePath = protectedMetadataRoute(new URL(request.url).pathname);
+  const requestUrl = new URL(request.url);
+  const routePath = protectedMetadataRoute(requestUrl.pathname, requestUrl.hostname);
   if (routePath !== route || route.audience !== "personal" || !route.scope) {
     return Response.json({ error: "not_found" }, { status: 404, headers: noStoreHeaders() });
   }
@@ -359,7 +368,7 @@ export async function handleOAuthMetadataRequest(
   if (pathname === AUTHORIZATION_SERVER_METADATA_PATH) {
     return proxyAuthorizationServerMetadata(issuer, fetchImpl);
   }
-  const route = protectedMetadataRoute(pathname);
+  const route = protectedMetadataRoute(pathname, new URL(request.url).hostname);
   if (!route) return Response.json({ error: "not_found" }, { status: 404, headers: noStoreHeaders() });
   return protectedResourceMetadata(request, route, issuer);
 }

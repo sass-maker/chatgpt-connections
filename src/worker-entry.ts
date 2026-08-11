@@ -30,7 +30,8 @@ export default {
     const metadata = await handleOAuthMetadataRequest(request, env);
     if (metadata) return metadata;
 
-    const route = hostedRoute(new URL(request.url).pathname);
+    const url = new URL(request.url);
+    const route = hostedRoute(url.pathname, url.hostname);
     if (!route || route.audience === "public") return handleHostedRequest(request);
 
     const authorization = await authorizeOAuthRequest(request, route, env);
@@ -41,7 +42,9 @@ export default {
 
     return handleHostedRequest(request, fetch, {
       grant: authorization.grant,
-      productToken: productToken(env, route),
+      upstreamToken: route.authMode === "federated"
+        ? authorization.accessToken
+        : productToken(env, route),
     });
   },
 } satisfies ExportedHandler<HostedWorkerEnv>;
