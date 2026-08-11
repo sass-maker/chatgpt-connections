@@ -6,8 +6,9 @@ Fleet routes read-only data according to its existing storage boundary:
   repository-scoped STDIO sidecar.
 - Cloud-backed products are independent ChatGPT web apps backed by fixed
   Streamable HTTP routes on one Cloudflare Worker.
-- Private hosted routes use owner-only OAuth 2.1 through Cloudflare Access.
-  ChatGPT receives an MCP access token, never an application's PAT.
+- Private hosted routes use WorkOS AuthKit as the OAuth 2.1 authorization
+  server. ChatGPT receives an audience-bound MCP access token, never an
+  application's PAT.
 - Public hosted routes are anonymous and can read only approved public APIs or
   exports.
 
@@ -35,33 +36,35 @@ are not hosted. Significant Hobbies private records are not hosted.
 
 ## OAuth and secret boundary
 
-`@cloudflare/workers-oauth-provider` owns MCP client metadata, authorization
-codes, scoped access/refresh tokens, rotation, revocation, resource audiences,
-and discovery. Its dedicated `OAUTH_KV` namespace may store only protocol state
-and grants. Product or general user records do not belong there.
+WorkOS AuthKit and Connect own MCP client registration, authorization codes,
+consent, access/refresh tokens, rotation, and revocation. The Worker is only the
+OAuth resource server: it publishes route-specific protected-resource
+metadata, proxies WorkOS authorization-server discovery for older clients, and
+validates WorkOS JWTs with `jose` against WorkOS's remote JWKS.
 
-Cloudflare Access is the upstream identity provider. The authorization handler
-requires exact issuer and Access client audience, a valid signature and time
-window, matching nonce, and the allowlisted `OWNER_EMAIL`. The grant is bound to
-one exact route and one product read scope. The protected handler then selects
-one matching Worker secret by a fixed switch. OAuth bearer values, Access
-tokens, product tokens, cookies, and private response bodies are not logged or
-cached.
+Every private request must have the exact WorkOS issuer, route URL in `aud`, a
+valid signature and short time window, the allowlisted `WORKOS_OWNER_USER_ID`
+in `sub`, and the route's read permission. The protected handler then selects
+one matching product secret by a fixed switch. OAuth bearer values, product
+tokens, and private response bodies are not logged or cached. No OAuth KV,
+WorkOS API key, client secret, cookie key, or owner email is needed by the
+Worker.
+
+The WorkOS environment is cost-gated: use its hosted `*.authkit.app` domain,
+stay below one million monthly active users, and do not enable a custom domain,
+enterprise SSO, Directory Sync, Cross App Access, or another paid feature. The
+Worker rejects custom AuthKit domains. WorkOS requires billing information to
+unlock production even when AuthKit remains at $0; any non-zero charge requires
+new owner approval.
 
 Required Worker secret names (values stay outside git):
 
-- `ACCESS_AUTHORIZATION_URL`
-- `ACCESS_CLIENT_ID`
-- `ACCESS_CLIENT_SECRET`
-- `ACCESS_ISSUER`
-- `ACCESS_JWKS_URL`
-- `ACCESS_TOKEN_URL`
-- `COOKIE_ENCRYPTION_KEY`
-- `OWNER_EMAIL`
 - `READER_MCP_TOKEN`
 - `CALORIE_MCP_TOKEN`
 - `SETLINE_MCP_TOKEN`
 - `ANIME_LIST_MCP_TOKEN`
+- `WORKOS_AUTHKIT_DOMAIN`
+- `WORKOS_OWNER_USER_ID`
 
 ## Local CodeVetter
 
@@ -80,18 +83,18 @@ and every other hosted product must not be added to Codex.
 | Product | Source | Protocol | Auth/config | Client |
 | --- | --- | --- | --- | --- |
 | CodeVetter | Sidecar/database verified | STDIO implementation ready | In-app repository consent pending | Codex registration pending |
-| Reader | Owner API ready | Worker route and tests ready | Live Access app and Worker secrets pending | ChatGPT app pending |
-| Calorie | Owner API ready | Worker route and tests ready | Live Access app and Worker secrets pending | ChatGPT app pending |
-| Setline | API projection ready | Worker route and tests ready | Owner account/token plus live Access config pending | ChatGPT app pending |
-| Anime List | Native production MCP verified | Fixed OAuth proxy and tests ready | Live Access app and Worker secret pending | ChatGPT app pending |
+| Reader | Owner API ready | Worker route and WorkOS JWT tests ready | WorkOS resource/permission plus Worker secrets pending | ChatGPT app pending |
+| Calorie | Owner API ready | Worker route and WorkOS JWT tests ready | WorkOS resource/permission plus Worker secrets pending | ChatGPT app pending |
+| Setline | API projection ready | Worker route and WorkOS JWT tests ready | Owner account/token plus WorkOS config pending | ChatGPT app pending |
+| Anime List | Native production MCP verified | Fixed WorkOS-authorized proxy and tests ready | WorkOS resource/permission plus Worker secret pending | ChatGPT app pending |
 | Starboard | Public API ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 | High Signal | Public surface ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
-| Significant Hobbies | Public projection ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
+| Significant Hobbies | Hobbies/experiences live; timeline timestamp fix pending deployment | Anonymous Worker route and tests ready | No auth | Product fix, gateway deployment, and ChatGPT app pending |
 | Research Papers | Public exports ready | Export-only Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 
-The OAuth KV namespace exists, but the Worker, Access for SaaS OIDC app,
-production secrets, deployment, and ChatGPT web registrations do not yet exist.
-The implementation must not be reported as active until those gates pass.
+No OAuth KV is required. The Worker deployment, WorkOS production configuration,
+production secrets, and ChatGPT web registrations do not yet exist. The
+implementation must not be reported as active until those gates pass.
 
 ## Development and verification
 
@@ -120,15 +123,22 @@ Generated binding types come from `wrangler types`; rerun
 
 ## Activation and revocation
 
-1. Create an owner-only Cloudflare Access for SaaS OIDC app with the Worker
-   callback `/oauth/callback` and record its endpoints as Worker secrets.
-2. Add product secrets without exposing their values, run the Fleet deployment
-   guard, and deploy the exact reviewed Git SHA through the manual path.
-3. Verify product-scoped OAuth discovery/consent/revocation and anonymous
-   production probes without retaining private bodies.
-4. Add one ChatGPT developer-mode app per ready hosted route. OAuth routes use
+1. In the free WorkOS environment, enable CIMD and DCR compatibility, create
+   the four read permissions, allow only the approved owner user, request
+   `offline_access`, and add every exact private route as a Resource Indicator.
+   Prefer a five-minute access-token lifetime and never exceed the Worker's
+   one-hour validation ceiling.
+2. Confirm WorkOS metadata advertises CIMD, DCR, PKCE S256, refresh tokens,
+   `offline_access`, and all four product read scopes. Record the hosted issuer
+   and owner user ID as Worker bindings without exposing their values.
+3. Add product secrets without exposing their values, run the Fleet deployment
+   and zero-cost guards, and deploy the exact reviewed Git SHA through the
+   manual path.
+4. Verify product-scoped OAuth discovery, consent, refresh/revocation, and
+   anonymous production probes without retaining private bodies.
+5. Add one ChatGPT developer-mode app per ready hosted route. Private routes use
    OAuth; public routes use No Authentication.
-5. Enable CodeVetter repositories in its own UI and register only those
+6. Enable CodeVetter repositories in its own UI and register only those
    generated configs in Codex.
 
 Disabling one ChatGPT app, revoking one OAuth grant, or revoking one product

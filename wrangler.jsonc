@@ -6,26 +6,14 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
   "preview_urls": false,
-  "kv_namespaces": [
-    {
-      "binding": "OAUTH_KV",
-      "id": "3d6d75b36996427cbc5fc294461354d0"
-    }
-  ],
   "secrets": {
     "required": [
-      "ACCESS_AUTHORIZATION_URL",
-      "ACCESS_CLIENT_ID",
-      "ACCESS_CLIENT_SECRET",
-      "ACCESS_ISSUER",
-      "ACCESS_JWKS_URL",
-      "ACCESS_TOKEN_URL",
       "ANIME_LIST_MCP_TOKEN",
       "CALORIE_MCP_TOKEN",
-      "COOKIE_ENCRYPTION_KEY",
-      "OWNER_EMAIL",
       "READER_MCP_TOKEN",
-      "SETLINE_MCP_TOKEN"
+      "SETLINE_MCP_TOKEN",
+      "WORKOS_AUTHKIT_DOMAIN",
+      "WORKOS_OWNER_USER_ID"
     ]
   },
   "observability": {

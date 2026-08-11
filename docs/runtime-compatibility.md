@@ -11,20 +11,23 @@ Checked on 2026-08-11 before the hosted transport was added.
 - The initial anonymous hosted transport required no new production runtime
   dependency. The MCP SDK remains pinned at 1.29.0 pending separate approval
   for a production dependency upgrade.
-- The approved hosted-personal revision requires OAuth 2.1. Fleet
-  `code-cleanup` receipt `run_2847f0f4c5774bd81c7d9442ccd26764`
-  covers the exact addition of `@cloudflare/workers-oauth-provider` 0.10.3.
-  It is Cloudflare-maintained, MIT-licensed, has no production dependencies of
-  its own, and was the current release at the gate. It replaces a custom OAuth
-  implementation for CIMD, PKCE, hashed access and refresh
-  tokens, encrypted grant props, resource audiences, rotation, and revocation.
+- The original hosted-personal revision used
+  `@cloudflare/workers-oauth-provider` 0.10.3 and a custom Cloudflare Access
+  bridge. The WorkOS revision supersedes both: AuthKit and Connect own CIMD,
+  DCR compatibility, PKCE, consent, access/refresh tokens, rotation, and
+  revocation outside the Worker.
+- The 2026-08-11 WorkOS cleanup gate replaced that provider with direct
+  `jose` 6.2.8. `jose` is the verifier in WorkOS's MCP documentation, is
+  MIT-licensed, uses Web Crypto in Workers, and was already present through the
+  pinned MCP SDK. Making it direct avoids depending on a transitive import and
+  removes the Worker-owned OAuth/KV implementation.
 - Wrangler 4.120.1 is pinned as development-only build, type-generation,
   local-smoke, and deployment tooling.
 - The audit's moderate `@hono/node-server` advisory remains visible. This
   helper does not import the Node/Hono static-file server path implicated by
-  that Windows-only advisory. The OAuth dependency introduced no additional
-  audit finding. Updating the MCP SDK remains a separate production-dependency
-  decision.
+  that Windows-only advisory. The WorkOS dependency swap introduced no new
+  audit finding. Updating the MCP SDK remains a separate
+  production-dependency decision.
 
 ## Cloudflare architecture gate
 
@@ -36,18 +39,27 @@ Checked on 2026-08-11 before the hosted transport was added.
 - MCP servers and transports will be constructed per request. No bearer,
   session, request body, tool result, or mutable request state may enter module
   scope, a binding, a cache, or a log.
-- The Worker has one dedicated `OAUTH_KV` namespace. It may contain only OAuth
-  client metadata, grants, hashed token material, encrypted grant props, and
-  short-lived consent/Access state. It is not an application or account store.
-- Private product tokens and Cloudflare Access OIDC configuration are separate
-  required Worker secrets. ChatGPT's bearer token is validated by the OAuth
-  provider and never forwarded. A fixed product token is selected only after
-  the decrypted product, scope, owner, and exact resource match the route.
-- Access identity validation checks the ID-token signature, exact issuer,
-  Access client audience, expiry/not-before/issued-at bounds, nonce, subject,
-  verified-status when present, and the exact owner email allowlist before a
-  grant is created. The upstream Access token is neither retained nor placed in
-  the MCP grant.
+- The Worker has no OAuth KV, authorization endpoint, token endpoint, callback,
+  client database, cookie encryption key, WorkOS API key, or WorkOS client
+  secret. WorkOS retains the OAuth protocol state; application data remains in
+  each product.
+- Private product tokens and the WorkOS hosted issuer/owner ID are separate
+  required Worker bindings. ChatGPT's WorkOS bearer token is validated and
+  never forwarded. A fixed product token is selected only after the product,
+  permission, owner `sub`, and exact route audience match.
+- WorkOS access-token validation checks an RS256 signature through the hosted
+  JWKS, exact `*.authkit.app` issuer, exact route URL audience, expiry and
+  issued-at bounds, maximum one-hour lifetime, token/consent identifiers,
+  allowlisted owner user ID, and exact product read permission. Invalid tokens
+  fail with an OAuth challenge; JWKS/config failures return a bounded 503 and
+  never invoke an upstream product.
+- Protected-resource metadata is route-specific. The compatibility discovery
+  proxy fails closed unless WorkOS advertises CIMD, DCR, PKCE S256,
+  authorization-code and refresh-token grants, `offline_access`, and every
+  private product scope.
+- The WorkOS cost boundary is also fail-closed at activation: hosted AuthKit
+  domain only, below one million MAU, and no custom domain, enterprise SSO,
+  Directory Sync, Cross App Access, or other paid feature.
 - Only fixed product routes and allowlisted upstream GET operations are
   addressable. Anime List is a fixed POST-only native MCP proxy. Protocol
   request bodies and upstream responses remain bounded.
@@ -59,5 +71,6 @@ References:
 - <https://developers.cloudflare.com/workers/best-practices/workers-best-practices/>
 - <https://developers.cloudflare.com/agents/model-context-protocol/protocol/authorization/>
 - <https://developers.cloudflare.com/agents/model-context-protocol/guides/securing-mcp-server/>
+- <https://workos.com/docs/authkit/mcp>
 - <https://developers.openai.com/plugins/build/auth>
 - <https://github.com/modelcontextprotocol/typescript-sdk>

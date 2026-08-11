@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
-      '@cloudflare/workers-oauth-provider':
-        specifier: 0.10.3
-        version: 0.10.3
       '@modelcontextprotocol/sdk':
         specifier: 1.29.0
         version: 1.29.0(zod@4.4.3)
+      jose:
+        specifier: 6.2.8
+        version: 6.2.8
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -75,9 +75,6 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
-
-  '@cloudflare/workers-oauth-provider@0.10.3':
-    resolution: {integrity: sha512-25ufMONJir9PllqVpK4GwOOoSFgpYm3+bM6NBedj7ufMCIfNf5jk4OI0LPuTJBaJgLl2lGCLqFqEPJXcSuPopQ==}
 
   '@cloudflare/workers-types@5.20260811.1':
     resolution: {integrity: sha512-jS3o9240P8t7Y/2lecXPC0rGdODZgHyFTWy9Asdm8htE2Uepx4PAvbcVo3EC0r8wZuv6rahDc1MMj+3nDZj/QA==}
@@ -932,8 +929,6 @@ snapshots:
 
   '@cloudflare/workerd-windows-64@1.20260804.1':
     optional: true
-
-  '@cloudflare/workers-oauth-provider@0.10.3': {}
 
   '@cloudflare/workers-types@5.20260811.1': {}
 
