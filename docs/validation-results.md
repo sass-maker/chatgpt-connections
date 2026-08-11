@@ -6,7 +6,7 @@ The local checks below preceded separately approved production activation work.
 
 | Surface | Validation | Result |
 | --- | --- | --- |
-| Shared stdio/Worker runtime | `pnpm check` | 51 tests passed; generated binding check and TypeScript build passed |
+| Shared stdio/Worker runtime | `pnpm check` | 57 tests passed; generated binding check and TypeScript build passed |
 | Reader | native tests, typecheck, and `pnpm check` | 93 tests and typecheck passed; 39 pre-existing Biome warnings remained non-fatal |
 | Starboard | tests, typecheck, and `pnpm check` | 43 files / 204 tests passed; typecheck and Biome passed |
 | High Signal API | API test suite | 19 files / 258 tests passed |
@@ -27,6 +27,10 @@ the Worker at 1,281.53 KiB / 221.29 KiB gzip with no KV bindings; the local
 startup profile sampled 41.1 ms active time. Local HTTP smoke checks returned
 `200` for health, anonymous Starboard initialize, and Reader protected-resource
 metadata, plus the expected `401` OAuth challenge for unauthenticated Reader.
+The credential-free activation verifier also passed exact WorkOS metadata/JWKS,
+pre-deployment-only, all-four-resource, custom-domain, malformed-origin,
+cross-product, missing-scope, cache-policy, and bounded-response tests. Its
+receipt leaves dashboard and live-grant evidence explicitly manual.
 
 Fresh status-only source probes returned `200` across Starboard, High Signal,
 Research Papers exports, and Significant Hobbies hobbies/experiences. Both

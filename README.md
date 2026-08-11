@@ -103,7 +103,25 @@ pnpm install --frozen-lockfile
 pnpm check
 pnpm exec wrangler deploy --dry-run
 pnpm exec wrangler dev
+pnpm verify:activation -- --issuer https://tenant.authkit.app
 ```
+
+The credential-free activation verifier checks WorkOS authorization-server
+metadata, CIMD/DCR compatibility, PKCE S256, refresh/offline scopes, and an
+RS256 signing key. After the gateway exists, add its origin to verify the
+compatibility proxy plus every exact private protected-resource document:
+
+```bash
+pnpm verify:activation -- \
+  --issuer https://tenant.authkit.app \
+  --gateway https://mcp.example.com
+```
+
+The JSON receipt always lists the gates it cannot prove from public metadata:
+the owner allowlist, registered WorkOS Resource Indicators, paid-feature
+settings, a real authorization-code/PKCE exchange, refresh rotation, and grant
+revocation. Those remain manual or live-token activation evidence; a passing
+metadata receipt is not full OAuth acceptance.
 
 Production deployment is intentionally available only as `pnpm run deploy`. That
 command requires a clean, synced `main`, a successful path-scoped
@@ -130,12 +148,15 @@ Generated binding types come from `wrangler types`; rerun
    one-hour validation ceiling.
 2. Confirm WorkOS metadata advertises CIMD, DCR, PKCE S256, refresh tokens,
    `offline_access`, and all four product read scopes. Record the hosted issuer
-   and owner user ID as Worker bindings without exposing their values.
+   and owner user ID as Worker bindings without exposing their values. Run the
+   pre-deployment activation verifier and retain only its credential-free JSON
+   result.
 3. Add product secrets without exposing their values, run the Fleet deployment
    and zero-cost guards, and deploy the exact reviewed Git SHA through the
    manual path.
 4. Verify product-scoped OAuth discovery, consent, refresh/revocation, and
-   anonymous production probes without retaining private bodies.
+   anonymous production probes without retaining private bodies. Re-run the
+   activation verifier with the deployed gateway origin before ChatGPT setup.
 5. Add one ChatGPT developer-mode app per ready hosted route. Private routes use
    OAuth; public routes use No Authentication.
 6. Enable CodeVetter repositories in its own UI and register only those

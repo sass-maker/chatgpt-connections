@@ -57,6 +57,11 @@ Checked on 2026-08-11 before the hosted transport was added.
   proxy fails closed unless WorkOS advertises CIMD, DCR, PKCE S256,
   authorization-code and refresh-token grants, `offline_access`, and every
   private product scope.
+- The dependency-free activation verifier applies the same compatibility
+  contract to WorkOS's public metadata and JWKS before deployment, then to the
+  gateway discovery proxy and four exact private resource documents after
+  deployment. Its receipt names dashboard/live-grant gates that public metadata
+  cannot prove instead of treating them as passed.
 - The WorkOS cost boundary is also fail-closed at activation: hosted AuthKit
   domain only, below one million MAU, and no custom domain, enterprise SSO,
   Directory Sync, Cross App Access, or other paid feature.

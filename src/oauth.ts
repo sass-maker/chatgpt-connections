@@ -295,7 +295,7 @@ function hasStrings(value: unknown, required: readonly string[]): boolean {
     required.every((item) => value.includes(item));
 }
 
-function validAuthorizationServerMetadata(metadata: Record<string, unknown>, issuer: string): boolean {
+export function validAuthorizationServerMetadata(metadata: Record<string, unknown>, issuer: string): boolean {
   return metadata.issuer === issuer &&
     sameIssuerEndpoint(metadata.authorization_endpoint, issuer) &&
     sameIssuerEndpoint(metadata.token_endpoint, issuer) &&
