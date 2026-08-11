@@ -13,7 +13,7 @@
     "types:worker": "wrangler types --include-runtime false",
     "types:check": "wrangler types --include-runtime false --check",
     "dev:worker": "wrangler dev",
-    "deploy:worker": "wrangler deploy --tag \"$(git rev-parse HEAD)\"",
+    "deploy": "node ../../ops/scripts/manual-component-deploy.mjs chatgpt-connections",
     "doctor": "pnpm run build && node dist/doctor.js",
     "start:reader": "node dist/entrypoints/reader.js",
     "start:starboard": "node dist/entrypoints/starboard.js",

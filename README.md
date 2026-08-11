@@ -102,6 +102,11 @@ pnpm exec wrangler deploy --dry-run
 pnpm exec wrangler dev
 ```
 
+Production deployment is intentionally available only as `pnpm run deploy`. That
+command requires a clean, synced `main`, a successful path-scoped
+`chatgpt-connections-ci.yml` run covering the current component state, and an
+exact 40-character Git SHA tag on the uploaded Worker version.
+
 STDIO entrypoints remain for source diagnostics and rollback, but are not
 registered in Codex:
 
