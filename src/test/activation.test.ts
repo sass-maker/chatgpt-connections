@@ -10,17 +10,18 @@ import {
 } from "../activation.js";
 import { PRIVATE_HOSTED_PATHS, PRIVATE_HOSTED_SCOPES, hostedRoute } from "../hosted.js";
 
-const issuer = "https://fleet-test.authkit.app";
+const issuer = "https://fleet-test.us.auth0.com/";
 const gateway = "https://mcp.example.com";
 
 function authorizationServerMetadata(): Record<string, unknown> {
   return {
     issuer,
-    authorization_endpoint: `${issuer}/oauth2/authorize`,
-    token_endpoint: `${issuer}/oauth2/token`,
-    registration_endpoint: `${issuer}/oauth2/register`,
-    introspection_endpoint: `${issuer}/oauth2/introspection`,
+    authorization_endpoint: `${issuer}authorize`,
+    token_endpoint: `${issuer}oauth/token`,
+    registration_endpoint: `${issuer}oidc/register`,
+    jwks_uri: `${issuer}.well-known/jwks.json`,
     client_id_metadata_document_supported: true,
+    token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
     code_challenge_methods_supported: ["S256"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     scopes_supported: ["openid", "offline_access", ...PRIVATE_HOSTED_SCOPES],
@@ -35,11 +36,11 @@ function successfulFetch(seen: string[] = []): typeof fetch {
   return async (input) => {
     const url = new URL(String(input));
     seen.push(url.href);
-    if (url.origin === issuer && url.pathname === "/.well-known/oauth-authorization-server") {
+    if (url.origin === new URL(issuer).origin && url.pathname === "/.well-known/oauth-authorization-server") {
       return json(authorizationServerMetadata());
     }
-    if (url.origin === issuer && url.pathname === "/oauth2/jwks") {
-      return json({ keys: [{ kty: "RSA", kid: "workos-key", alg: "RS256", use: "sig", n: "A".repeat(342), e: "AQAB" }] });
+    if (url.origin === new URL(issuer).origin && url.pathname === "/.well-known/jwks.json") {
+      return json({ keys: [{ kty: "RSA", kid: "auth0-key", alg: "RS256", use: "sig", n: "A".repeat(342), e: "AQAB" }] });
     }
     if (url.origin === gateway && url.pathname === "/.well-known/oauth-authorization-server") {
       return json(authorizationServerMetadata(), true);
@@ -68,7 +69,7 @@ async function rejectsWithCode(promise: Promise<unknown>, code: string): Promise
   });
 }
 
-test("activation verifier proves WorkOS metadata, JWKS, and every exact private resource", async () => {
+test("activation verifier proves Auth0 metadata, JWKS, and every exact private resource", async () => {
   const seen: string[] = [];
   const receipt = await verifyActivation({ issuer, gatewayOrigin: gateway, fetchImpl: successfulFetch(seen) });
   assert.equal(receipt.ok, true);
@@ -76,8 +77,8 @@ test("activation verifier proves WorkOS metadata, JWKS, and every exact private 
   assert.equal(receipt.gatewayOrigin, gateway);
   assert.match(receipt.checkedAt, /^\d{4}-\d{2}-\d{2}T/u);
   assert.deepEqual(receipt.checks, [
-    { id: "workos_authorization_server_metadata", status: "passed" },
-    { id: "workos_rs256_jwks", status: "passed" },
+    { id: "auth0_authorization_server_metadata", status: "passed" },
+    { id: "auth0_rs256_jwks", status: "passed" },
     { id: "gateway_authorization_server_metadata", status: "passed" },
     { id: "private_resource_metadata", status: "passed" },
   ]);
@@ -91,19 +92,19 @@ test("activation verifier proves WorkOS metadata, JWKS, and every exact private 
   assert.equal(seen.length, PRIVATE_HOSTED_PATHS.length + 3);
 });
 
-test("activation verifier can check WorkOS before the gateway exists", async () => {
+test("activation verifier can check Auth0 before the gateway exists", async () => {
   const seen: string[] = [];
   const receipt = await verifyActivation({ issuer, fetchImpl: successfulFetch(seen) });
   assert.equal(receipt.gatewayOrigin, undefined);
   assert.deepEqual(receipt.resources, []);
   assert.deepEqual(receipt.checks.map((check) => check.id), [
-    "workos_authorization_server_metadata",
-    "workos_rs256_jwks",
+    "auth0_authorization_server_metadata",
+    "auth0_rs256_jwks",
   ]);
   assert.equal(seen.length, 2);
 });
 
-test("activation verifier rejects custom domains and malformed gateway origins before fetching", async () => {
+test("activation verifier rejects non-Auth0 domains and malformed gateway origins before fetching", async () => {
   let calls = 0;
   const fetchImpl: typeof fetch = async () => {
     calls += 1;
@@ -120,7 +121,7 @@ test("activation verifier rejects custom domains and malformed gateway origins b
   assert.equal(calls, 0);
 });
 
-test("activation verifier fails closed on incompatible WorkOS or gateway metadata", async () => {
+test("activation verifier fails closed on incompatible Auth0 or gateway metadata", async () => {
   const missingOffline = authorizationServerMetadata();
   missingOffline.scopes_supported = PRIVATE_HOSTED_SCOPES;
   await rejectsWithCode(
@@ -128,12 +129,12 @@ test("activation verifier fails closed on incompatible WorkOS or gateway metadat
       issuer,
       fetchImpl: async (input) => {
         const url = new URL(String(input));
-        return url.pathname === "/oauth2/jwks"
+        return url.pathname === "/.well-known/jwks.json"
           ? json({ keys: [{ kty: "RSA", kid: "key", n: "A".repeat(342), e: "AQAB" }] })
           : json(missingOffline);
       },
     }),
-    "workos_metadata_incompatible",
+    "auth0_metadata_incompatible",
   );
 
   const fetchImpl = successfulFetch();

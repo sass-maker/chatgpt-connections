@@ -1,5 +1,5 @@
 import { PRIVATE_HOSTED_PATHS, hostedRoute } from "./hosted.js";
-import { validAuthorizationServerMetadata, workosIssuer } from "./oauth.js";
+import { auth0Issuer, validAuthorizationServerMetadata } from "./oauth.js";
 
 const MAX_METADATA_BYTES = 65_536;
 const FETCH_TIMEOUT_MS = 5_000;
@@ -9,7 +9,9 @@ const PROTECTED_RESOURCE_METADATA_PREFIX = "/.well-known/oauth-protected-resourc
 export const MANUAL_ACTIVATION_GATES = Object.freeze([
   "owner_allowlist",
   "registered_resource_indicators",
-  "paid_feature_settings",
+  "cimd_client_registration",
+  "default_third_party_permissions",
+  "free_plan_limits",
   "authorization_code_pkce",
   "refresh_rotation",
   "grant_revocation",
@@ -169,7 +171,7 @@ export async function verifyActivation(
 ): Promise<ActivationVerificationReceipt> {
   let issuer: string;
   try {
-    issuer = workosIssuer({ WORKOS_AUTHKIT_DOMAIN: options.issuer });
+    issuer = auth0Issuer({ AUTH0_ISSUER: options.issuer });
   } catch {
     throw new ActivationVerificationError("issuer_invalid");
   }
@@ -178,19 +180,19 @@ export async function verifyActivation(
   const checks: Array<{ id: string; status: "passed" }> = [];
   const resources: ActivationVerificationReceipt["resources"] = [];
 
-  const workosMetadata = await fetchJson(
+  const auth0Metadata = await fetchJson(
     new URL(AUTHORIZATION_SERVER_METADATA_PATH, issuer),
-    "workos_metadata",
+    "auth0_metadata",
     fetchImpl,
   );
-  if (!validAuthorizationServerMetadata(workosMetadata.body, issuer)) {
-    throw new ActivationVerificationError("workos_metadata_incompatible");
+  if (!validAuthorizationServerMetadata(auth0Metadata.body, issuer)) {
+    throw new ActivationVerificationError("auth0_metadata_incompatible");
   }
-  checks.push({ id: "workos_authorization_server_metadata", status: "passed" });
+  checks.push({ id: "auth0_authorization_server_metadata", status: "passed" });
 
-  const jwks = await fetchJson(new URL("/oauth2/jwks", issuer), "workos_jwks", fetchImpl);
-  if (!validJwks(jwks.body)) throw new ActivationVerificationError("workos_jwks_incompatible");
-  checks.push({ id: "workos_rs256_jwks", status: "passed" });
+  const jwks = await fetchJson(new URL("/.well-known/jwks.json", issuer), "auth0_jwks", fetchImpl);
+  if (!validJwks(jwks.body)) throw new ActivationVerificationError("auth0_jwks_incompatible");
+  checks.push({ id: "auth0_rs256_jwks", status: "passed" });
 
   if (origin) {
     const gatewayMetadata = await fetchJson(

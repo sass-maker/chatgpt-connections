@@ -19,15 +19,15 @@ The local checks below preceded separately approved production activation work.
 | OpenSpec | strict validation | passed |
 | MCP Inspector | discovery across eight servers | 41 tools discovered with read-only/non-destructive annotations |
 
-The WorkOS resource-server revision additionally passed local RS256/JWKS,
+The Auth0 resource-server revision additionally passed local RS256/JWKS,
 issuer, exact audience, owner `sub`, permission, expiry/lifetime, malformed
-bearer, protected-resource metadata, authorization-server metadata, CIMD/DCR,
+bearer, protected-resource metadata, authorization-server metadata, CIMD,
 PKCE, refresh-scope, and fail-closed metadata tests. Wrangler's dry-run bundled
 the Worker at 1,281.53 KiB / 221.29 KiB gzip with no KV bindings; the local
 startup profile sampled 41.1 ms active time. Local HTTP smoke checks returned
 `200` for health, anonymous Starboard initialize, and Reader protected-resource
 metadata, plus the expected `401` OAuth challenge for unauthenticated Reader.
-The credential-free activation verifier also passed exact WorkOS metadata/JWKS,
+The credential-free activation verifier also passed exact Auth0 metadata/JWKS,
 pre-deployment-only, all-four-resource, custom-domain, malformed-origin,
 cross-product, missing-scope, cache-policy, and bounded-response tests. Its
 receipt leaves dashboard and live-grant evidence explicitly manual.
@@ -71,8 +71,9 @@ Application-side activation completed on 2026-08-11:
 
 External activation remains incomplete. The Setline production database has no
 owner row, so a real user must sign in once before its owner-scoped token can be
-issued. WorkOS still needs its free production environment, hosted AuthKit
-issuer, owner user, product read permissions, CIMD/DCR settings, and exact
-private-route Resource Indicators. The shared Worker is not deployed and no
+issued. Auth0 tenant signup, the standard hosted issuer, verified Google owner,
+CIMD, and resource-parameter compatibility are configured without a card. Four
+exact one-hour API audiences, read permissions, and default third-party user
+grants are configured. The shared Worker is not deployed and no
 ChatGPT app or retained ChatGPT evaluation has run. These remaining states are
 tracked separately in the active OpenSpec change.

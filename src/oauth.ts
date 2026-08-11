@@ -7,7 +7,6 @@ import {
 } from "jose";
 
 import {
-  PRIVATE_HOSTED_SCOPES,
   hostedRoute,
   type HostedRouteDefinition,
 } from "./hosted.js";
@@ -29,22 +28,21 @@ export interface OAuthGrantProps {
 
 export type HostedWorkerEnv = Env;
 
-export type WorkosAuthorizationResult =
+export type OAuthAuthorizationResult =
   | { status: "authorized"; grant: OAuthGrantProps }
   | { status: "missing" | "invalid" }
   | { status: "unavailable" | "misconfigured" };
 
-interface WorkosAccessClaims extends JWTPayload {
+interface Auth0AccessClaims extends JWTPayload {
   permissions?: unknown;
   scope?: unknown;
   scopes?: unknown;
-  sid?: unknown;
 }
 
-class WorkosConfigurationError extends Error {
+class Auth0ConfigurationError extends Error {
   constructor() {
-    super("workos_configuration_invalid");
-    this.name = "WorkosConfigurationError";
+    super("auth0_configuration_invalid");
+    this.name = "Auth0ConfigurationError";
   }
 }
 
@@ -64,17 +62,17 @@ function isLocalHttp(url: URL): boolean {
 function exactResource(request: Request): string {
   const url = new URL(request.url);
   if ((url.protocol !== "https:" && !isLocalHttp(url)) || url.username || url.password || url.hash) {
-    throw new WorkosConfigurationError();
+    throw new Auth0ConfigurationError();
   }
   return `${url.origin}${url.pathname}`;
 }
 
-export function workosIssuer(env: Pick<HostedWorkerEnv, "WORKOS_AUTHKIT_DOMAIN">): string {
+export function auth0Issuer(env: Pick<HostedWorkerEnv, "AUTH0_ISSUER">): string {
   let url: URL;
   try {
-    url = new URL(env.WORKOS_AUTHKIT_DOMAIN);
+    url = new URL(env.AUTH0_ISSUER);
   } catch {
-    throw new WorkosConfigurationError();
+    throw new Auth0ConfigurationError();
   }
   if (
     url.protocol !== "https:" ||
@@ -84,21 +82,21 @@ export function workosIssuer(env: Pick<HostedWorkerEnv, "WORKOS_AUTHKIT_DOMAIN">
     url.pathname !== "/" ||
     url.search ||
     url.hash ||
-    !url.hostname.endsWith(".authkit.app")
+    !url.hostname.endsWith(".auth0.com")
   ) {
-    throw new WorkosConfigurationError();
+    throw new Auth0ConfigurationError();
   }
-  return url.origin;
+  return url.href;
 }
 
-function ownerUserId(env: Pick<HostedWorkerEnv, "WORKOS_OWNER_USER_ID">): string {
-  const value = env.WORKOS_OWNER_USER_ID.trim();
-  if (!/^user_[A-Za-z0-9]{8,128}$/u.test(value)) throw new WorkosConfigurationError();
+function ownerUserId(env: Pick<HostedWorkerEnv, "AUTH0_OWNER_USER_ID">): string {
+  const value = env.AUTH0_OWNER_USER_ID.trim();
+  if (!/^[A-Za-z0-9._|:@+-]{3,256}$/u.test(value)) throw new Auth0ConfigurationError();
   return value;
 }
 
-function workosJwksUrl(issuer: string): URL {
-  return new URL("/oauth2/jwks", issuer);
+function auth0JwksUrl(issuer: string): URL {
+  return new URL("/.well-known/jwks.json", issuer);
 }
 
 let cachedIssuer: string | undefined;
@@ -107,7 +105,7 @@ let cachedRemoteJwks: JWTVerifyGetKey | undefined;
 function remoteJwks(issuer: string): JWTVerifyGetKey {
   if (cachedIssuer !== issuer || !cachedRemoteJwks) {
     cachedIssuer = issuer;
-    cachedRemoteJwks = createRemoteJWKSet(workosJwksUrl(issuer), {
+    cachedRemoteJwks = createRemoteJWKSet(auth0JwksUrl(issuer), {
       cacheMaxAge: 300_000,
       cooldownDuration: 30_000,
       timeoutDuration: METADATA_FETCH_TIMEOUT_MS,
@@ -130,7 +128,7 @@ function stringClaims(value: unknown): string[] {
   return [];
 }
 
-function grantedPermissions(payload: WorkosAccessClaims): Set<string> {
+function grantedPermissions(payload: Auth0AccessClaims): Set<string> {
   return new Set([
     ...stringClaims(payload.scope),
     ...stringClaims(payload.scopes),
@@ -138,42 +136,40 @@ function grantedPermissions(payload: WorkosAccessClaims): Set<string> {
   ]);
 }
 
-function validWorkosClaims(
-  payload: WorkosAccessClaims,
+function validAuth0Claims(
+  payload: Auth0AccessClaims,
   expectedOwnerId: string,
   expectedScope: string,
-): payload is WorkosAccessClaims & { exp: number; iat: number; jti: string; sid: string; sub: string } {
+): payload is Auth0AccessClaims & { exp: number; iat: number; sub: string } {
   return typeof payload.sub === "string" &&
     payload.sub === expectedOwnerId &&
     typeof payload.exp === "number" &&
     typeof payload.iat === "number" &&
     payload.exp > payload.iat &&
     payload.exp - payload.iat <= MAX_ACCESS_TOKEN_LIFETIME_SECONDS + CLOCK_TOLERANCE_SECONDS &&
-    typeof payload.jti === "string" && payload.jti.length > 0 && payload.jti.length <= 256 &&
-    typeof payload.sid === "string" && payload.sid.length > 0 && payload.sid.length <= 256 &&
     grantedPermissions(payload).has(expectedScope);
 }
 
-export async function verifyWorkosAccessToken(
+export async function verifyAuth0AccessToken(
   token: string,
   request: Request,
   route: HostedRouteDefinition,
-  env: Pick<HostedWorkerEnv, "WORKOS_AUTHKIT_DOMAIN" | "WORKOS_OWNER_USER_ID">,
+  env: Pick<HostedWorkerEnv, "AUTH0_ISSUER" | "AUTH0_OWNER_USER_ID">,
   getKey?: JWTVerifyGetKey,
 ): Promise<OAuthGrantProps> {
-  if (route.audience !== "personal" || !route.scope) throw new WorkosConfigurationError();
-  const issuer = workosIssuer(env);
+  if (route.audience !== "personal" || !route.scope) throw new Auth0ConfigurationError();
+  const issuer = auth0Issuer(env);
   const resource = exactResource(request);
-  const { payload } = await jwtVerify<WorkosAccessClaims>(token, getKey ?? remoteJwks(issuer), {
+  const { payload } = await jwtVerify<Auth0AccessClaims>(token, getKey ?? remoteJwks(issuer), {
     algorithms: ["RS256"],
     audience: resource,
     clockTolerance: CLOCK_TOLERANCE_SECONDS,
     issuer,
-    requiredClaims: ["iss", "aud", "sub", "exp", "iat", "jti", "sid"],
+    requiredClaims: ["iss", "aud", "sub", "exp", "iat"],
   });
   const ownerId = ownerUserId(env);
-  if (!validWorkosClaims(payload, ownerId, route.scope)) {
-    throw new joseErrors.JWTClaimValidationFailed("required WorkOS claims are invalid", payload, "sub");
+  if (!validAuth0Claims(payload, ownerId, route.scope)) {
+    throw new joseErrors.JWTClaimValidationFailed("required Auth0 claims are invalid", payload, "sub");
   }
   return {
     ownerId,
@@ -189,32 +185,32 @@ function isJwksUnavailable(error: unknown): boolean {
     (error instanceof DOMException && error.name === "TimeoutError");
 }
 
-export async function authorizeWorkosRequest(
+export async function authorizeOAuthRequest(
   request: Request,
   route: HostedRouteDefinition,
-  env: Pick<HostedWorkerEnv, "WORKOS_AUTHKIT_DOMAIN" | "WORKOS_OWNER_USER_ID">,
+  env: Pick<HostedWorkerEnv, "AUTH0_ISSUER" | "AUTH0_OWNER_USER_ID">,
   getKey?: JWTVerifyGetKey,
-): Promise<WorkosAuthorizationResult> {
+): Promise<OAuthAuthorizationResult> {
   const token = bearerToken(request);
   if (token === undefined) return { status: "missing" };
   if (token === null) return { status: "invalid" };
   try {
-    return { status: "authorized", grant: await verifyWorkosAccessToken(token, request, route, env, getKey) };
+    return { status: "authorized", grant: await verifyAuth0AccessToken(token, request, route, env, getKey) };
   } catch (error) {
-    if (error instanceof WorkosConfigurationError) {
-      console.error(JSON.stringify({ message: "workos_auth_misconfigured", path: new URL(request.url).pathname }));
+    if (error instanceof Auth0ConfigurationError) {
+      console.error(JSON.stringify({ message: "auth0_auth_misconfigured", path: new URL(request.url).pathname }));
       return { status: "misconfigured" };
     }
     if (isJwksUnavailable(error)) {
       console.error(JSON.stringify({
-        message: "workos_jwks_unavailable",
+        message: "auth0_jwks_unavailable",
         errorType: error instanceof Error ? error.name : "UnknownError",
         path: new URL(request.url).pathname,
       }));
       return { status: "unavailable" };
     }
     console.warn(JSON.stringify({
-      message: "workos_token_rejected",
+      message: "auth0_token_rejected",
       code: error instanceof joseErrors.JOSEError ? error.code : "unknown",
       path: new URL(request.url).pathname,
     }));
@@ -279,7 +275,7 @@ function sameIssuerEndpoint(value: unknown, issuer: string): boolean {
   try {
     const url = new URL(value);
     return url.protocol === "https:" &&
-      url.origin === issuer &&
+      url.origin === new URL(issuer).origin &&
       !url.username &&
       !url.password &&
       !url.search &&
@@ -300,11 +296,12 @@ export function validAuthorizationServerMetadata(metadata: Record<string, unknow
     sameIssuerEndpoint(metadata.authorization_endpoint, issuer) &&
     sameIssuerEndpoint(metadata.token_endpoint, issuer) &&
     sameIssuerEndpoint(metadata.registration_endpoint, issuer) &&
-    sameIssuerEndpoint(metadata.introspection_endpoint, issuer) &&
+    sameIssuerEndpoint(metadata.jwks_uri, issuer) &&
     metadata.client_id_metadata_document_supported === true &&
+    hasStrings(metadata.token_endpoint_auth_methods_supported, ["none"]) &&
     hasStrings(metadata.code_challenge_methods_supported, ["S256"]) &&
     hasStrings(metadata.grant_types_supported, ["authorization_code", "refresh_token"]) &&
-    hasStrings(metadata.scopes_supported, ["offline_access", ...PRIVATE_HOSTED_SCOPES]);
+    hasStrings(metadata.scopes_supported, ["offline_access"]);
 }
 
 async function proxyAuthorizationServerMetadata(
@@ -325,7 +322,7 @@ async function proxyAuthorizationServerMetadata(
     return Response.json(metadata, { headers: noStoreHeaders() });
   } catch (error) {
     console.error(JSON.stringify({
-      message: "workos_metadata_unavailable",
+      message: "auth0_metadata_unavailable",
       errorType: error instanceof Error ? error.name : "UnknownError",
     }));
     return Response.json(
@@ -335,9 +332,9 @@ async function proxyAuthorizationServerMetadata(
   }
 }
 
-export async function handleWorkosMetadataRequest(
+export async function handleOAuthMetadataRequest(
   request: Request,
-  env: Pick<HostedWorkerEnv, "WORKOS_AUTHKIT_DOMAIN">,
+  env: Pick<HostedWorkerEnv, "AUTH0_ISSUER">,
   fetchImpl: typeof fetch = fetch,
 ): Promise<Response | undefined> {
   const pathname = new URL(request.url).pathname;
@@ -352,7 +349,7 @@ export async function handleWorkosMetadataRequest(
   }
   let issuer: string;
   try {
-    issuer = workosIssuer(env);
+    issuer = auth0Issuer(env);
   } catch {
     return Response.json(
       { error: "authorization_server_unavailable" },

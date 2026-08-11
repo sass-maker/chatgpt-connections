@@ -12,8 +12,8 @@
       "CALORIE_MCP_TOKEN",
       "READER_MCP_TOKEN",
       "SETLINE_MCP_TOKEN",
-      "WORKOS_AUTHKIT_DOMAIN",
-      "WORKOS_OWNER_USER_ID"
+      "AUTH0_ISSUER",
+      "AUTH0_OWNER_USER_ID"
     ]
   },
   "observability": {

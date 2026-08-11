@@ -6,7 +6,7 @@ Fleet routes read-only data according to its existing storage boundary:
   repository-scoped STDIO sidecar.
 - Cloud-backed products are independent ChatGPT web apps backed by fixed
   Streamable HTTP routes on one Cloudflare Worker.
-- Private hosted routes use WorkOS AuthKit as the OAuth 2.1 authorization
+- Private hosted routes use Auth0 as the OAuth 2.1 authorization
   server. ChatGPT receives an audience-bound MCP access token, never an
   application's PAT.
 - Public hosted routes are anonymous and can read only approved public APIs or
@@ -36,26 +36,26 @@ are not hosted. Significant Hobbies private records are not hosted.
 
 ## OAuth and secret boundary
 
-WorkOS AuthKit and Connect own MCP client registration, authorization codes,
-consent, access/refresh tokens, rotation, and revocation. The Worker is only the
+Auth0 owns MCP client registration, authorization codes, consent,
+access/refresh tokens, rotation, and revocation. The Worker is only the
 OAuth resource server: it publishes route-specific protected-resource
-metadata, proxies WorkOS authorization-server discovery for older clients, and
-validates WorkOS JWTs with `jose` against WorkOS's remote JWKS.
+metadata, proxies Auth0 authorization-server discovery for older clients, and
+validates Auth0 JWTs with `jose` against Auth0's remote JWKS.
 
-Every private request must have the exact WorkOS issuer, route URL in `aud`, a
-valid signature and short time window, the allowlisted `WORKOS_OWNER_USER_ID`
+Every private request must have the exact Auth0 issuer, route URL in `aud`, a
+valid signature and short time window, the allowlisted `AUTH0_OWNER_USER_ID`
 in `sub`, and the route's read permission. The protected handler then selects
 one matching product secret by a fixed switch. OAuth bearer values, product
 tokens, and private response bodies are not logged or cached. No OAuth KV,
-WorkOS API key, client secret, cookie key, or owner email is needed by the
+Auth0 Management API token, client secret, cookie key, or owner email is needed by the
 Worker.
 
-The WorkOS environment is cost-gated: use its hosted `*.authkit.app` domain,
-stay below one million monthly active users, and do not enable a custom domain,
-enterprise SSO, Directory Sync, Cross App Access, or another paid feature. The
-Worker rejects custom AuthKit domains. WorkOS requires billing information to
-unlock production even when AuthKit remains at $0; any non-zero charge requires
-new owner approval.
+The Auth0 environment is cost-gated: use its standard hosted `*.auth0.com`
+tenant domain, stay within the free plan, and do not enable a custom domain or
+another paid feature. The Worker rejects custom issuers. Client registration
+uses Auth0 Client ID Metadata Documents (CIMD); open dynamic client
+registration stays disabled. No payment card is required for this setup, and
+any non-zero charge requires new owner approval.
 
 Required Worker secret names (values stay outside git):
 
@@ -63,8 +63,8 @@ Required Worker secret names (values stay outside git):
 - `CALORIE_MCP_TOKEN`
 - `SETLINE_MCP_TOKEN`
 - `ANIME_LIST_MCP_TOKEN`
-- `WORKOS_AUTHKIT_DOMAIN`
-- `WORKOS_OWNER_USER_ID`
+- `AUTH0_ISSUER`
+- `AUTH0_OWNER_USER_ID`
 
 ## Local CodeVetter
 
@@ -83,17 +83,17 @@ and every other hosted product must not be added to Codex.
 | Product | Source | Protocol | Auth/config | Client |
 | --- | --- | --- | --- | --- |
 | CodeVetter | Sidecar/database verified | STDIO implementation ready | In-app repository consent pending | Codex registration pending |
-| Reader | Owner API ready | Worker route and WorkOS JWT tests ready | WorkOS resource/permission plus Worker secrets pending | ChatGPT app pending |
-| Calorie | Owner API ready | Worker route and WorkOS JWT tests ready | WorkOS resource/permission plus Worker secrets pending | ChatGPT app pending |
-| Setline | API projection ready | Worker route and WorkOS JWT tests ready | Owner account/token plus WorkOS config pending | ChatGPT app pending |
-| Anime List | Native production MCP verified | Fixed WorkOS-authorized proxy and tests ready | WorkOS resource/permission plus Worker secret pending | ChatGPT app pending |
+| Reader | Owner API ready | Worker route and Auth0 JWT tests ready | Auth0 API/grant ready; Worker secrets pending | ChatGPT app pending |
+| Calorie | Owner API ready | Worker route and Auth0 JWT tests ready | Auth0 API/grant ready; Worker secrets pending | ChatGPT app pending |
+| Setline | API projection ready | Worker route and Auth0 JWT tests ready | Auth0 API/grant ready; owner account/token pending | ChatGPT app pending |
+| Anime List | Native production MCP verified | Fixed Auth0-authorized proxy and tests ready | Auth0 API/grant ready; Worker secret pending | ChatGPT app pending |
 | Starboard | Public API ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 | High Signal | Public surface ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 | Significant Hobbies | Hobbies, experiences, and public timelines live; production timestamp fix verified | Anonymous Worker route and tests ready | No auth | Gateway deployment and ChatGPT app pending |
 | Research Papers | Public exports ready | Export-only Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 
-No OAuth KV is required. The Worker deployment, WorkOS production configuration,
-production secrets, and ChatGPT web registrations do not yet exist. The
+No OAuth KV is required. The Auth0 tenant and exact resource APIs exist; the
+Worker deployment, production secrets, and ChatGPT web registrations do not. The
 implementation must not be reported as active until those gates pass.
 
 ## Development and verification
@@ -103,22 +103,22 @@ pnpm install --frozen-lockfile
 pnpm check
 pnpm exec wrangler deploy --dry-run
 pnpm exec wrangler dev
-pnpm verify:activation -- --issuer https://tenant.authkit.app
+pnpm verify:activation -- --issuer https://tenant.us.auth0.com/
 ```
 
-The credential-free activation verifier checks WorkOS authorization-server
-metadata, CIMD/DCR compatibility, PKCE S256, refresh/offline scopes, and an
+The credential-free activation verifier checks Auth0 authorization-server
+metadata, CIMD compatibility, PKCE S256, refresh/offline scopes, and an
 RS256 signing key. After the gateway exists, add its origin to verify the
 compatibility proxy plus every exact private protected-resource document:
 
 ```bash
 pnpm verify:activation -- \
-  --issuer https://tenant.authkit.app \
+  --issuer https://tenant.us.auth0.com/ \
   --gateway https://mcp.example.com
 ```
 
 The JSON receipt always lists the gates it cannot prove from public metadata:
-the owner allowlist, registered WorkOS Resource Indicators, paid-feature
+the owner allowlist, registered Auth0 API audiences, paid-feature
 settings, a real authorization-code/PKCE exchange, refresh rotation, and grant
 revocation. Those remain manual or live-token activation evidence; a passing
 metadata receipt is not full OAuth acceptance.
@@ -141,13 +141,13 @@ Generated binding types come from `wrangler types`; rerun
 
 ## Activation and revocation
 
-1. In the free WorkOS environment, enable CIMD and DCR compatibility, create
-   the four read permissions, allow only the approved owner user, request
-   `offline_access`, and add every exact private route as a Resource Indicator.
-   Prefer a five-minute access-token lifetime and never exceed the Worker's
-   one-hour validation ceiling.
-2. Confirm WorkOS metadata advertises CIMD, DCR, PKCE S256, refresh tokens,
-   `offline_access`, and all four product read scopes. Record the hosted issuer
+1. In the free Auth0 tenant, enable CIMD and the resource-parameter
+   compatibility profile, create one API for each exact private route with one
+   matching read permission, add a default third-party user grant, request
+   `offline_access`, and keep open dynamic client registration disabled. Set
+   each API access-token lifetime to one hour or less.
+2. Confirm Auth0 metadata advertises CIMD, PKCE S256, refresh tokens, and
+   `offline_access`. Record the standard hosted issuer
    and owner user ID as Worker bindings without exposing their values. Run the
    pre-deployment activation verifier and retain only its credential-free JSON
    result.
