@@ -89,7 +89,7 @@ and every other hosted product must not be added to Codex.
 | Anime List | Native production MCP verified | Fixed WorkOS-authorized proxy and tests ready | WorkOS resource/permission plus Worker secret pending | ChatGPT app pending |
 | Starboard | Public API ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 | High Signal | Public surface ready | Anonymous Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
-| Significant Hobbies | Hobbies/experiences live; timeline timestamp fix pending deployment | Anonymous Worker route and tests ready | No auth | Product fix, gateway deployment, and ChatGPT app pending |
+| Significant Hobbies | Hobbies, experiences, and public timelines live; production timestamp fix verified | Anonymous Worker route and tests ready | No auth | Gateway deployment and ChatGPT app pending |
 | Research Papers | Public exports ready | Export-only Worker route and tests ready | No auth | Deployment and ChatGPT app pending |
 
 No OAuth KV is required. The Worker deployment, WorkOS production configuration,
