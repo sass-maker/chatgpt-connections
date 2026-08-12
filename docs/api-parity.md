@@ -25,6 +25,12 @@ other capabilities outside the read-only publication boundary.
 | High Signal | 4 | Daily production monitor enforces exact live catalog equality |
 | Significant Hobbies | 5 | Daily production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Daily production monitor enforces exact live catalog equality |
+| PostTrainLLM | 3 | Gateway tests enforce exact catalog equality; production activation pending |
+| SWE Interview Prep | 5 | Gateway tests enforce exact catalog equality; production activation pending |
+| What It Takes to Win | 3 | Gateway tests enforce exact catalog equality; production activation pending |
+| SaaS Maker | 4 | Gateway tests enforce exact catalog equality; production activation pending |
+| Drank | 1 | Gateway tests enforce exact catalog equality; production activation pending |
+| LoopTV | 1 | Gateway tests enforce exact catalog equality; production activation pending |
 
 The private expected catalogs are:
 
@@ -57,6 +63,18 @@ The following surfaces remain unavailable by design:
   administrative state.
 - Research Papers full-corpus search, similarity, paid RAG, PDFs, ingest,
   enrichment, databases, and operator controls.
+- PostTrainLLM training, inference, uploads, checkpoints, publication, and local
+  factory state.
+- SWE Interview Prep progress, notes, reviews, chats, accounts, and code
+  execution.
+- What It Takes to Win unpublished research, source archives, editing, and its
+  oversized full dataset.
+- SaaS Maker internal registry, operations, deployments, credentials, and
+  owner-only data.
+- Drank provider credentials, private targets, history, and arbitrary provider
+  operations.
+- LoopTV playback, station changes, arbitrary YouTube operations, and the
+  oversized full catalog.
 
 Adding any excluded API is a privacy/product-scope change requiring a new
 review; it is not a parity bug.

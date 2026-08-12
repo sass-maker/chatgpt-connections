@@ -22,10 +22,10 @@ interface Listing {
   terms: string;
 }
 
-test("all seven public listing packages are complete and independently verifiable", async () => {
+test("all thirteen public listing packages are complete and independently verifiable", async () => {
   const path = new URL("../../docs/listings/plugins.json", import.meta.url);
   const manifest = JSON.parse(await readFile(path, "utf8")) as { plugins: Listing[] };
-  assert.equal(manifest.plugins.length, 7);
+  assert.equal(manifest.plugins.length, 13);
 
   const ids = new Set<string>();
   const hosts = new Set<string>();

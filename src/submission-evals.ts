@@ -104,6 +104,66 @@ const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> =
     ],
     negativeTools: ["search_private_corpus", "download_pdf", "ingest_paper"],
   },
+  posttrainllm: {
+    positive: [
+      { tool: "search_published_models", arguments: { q: "TinyStories", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_published_models", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "get_published_model", arguments: { id: "tinystories" }, shape: "item" },
+      { tool: "list_model_benchmarks", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_published_models", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
+    ],
+    negativeTools: ["train_model", "upload_checkpoint", "publish_model"],
+  },
+  "swe-interview-prep": {
+    positive: [
+      { tool: "search_curriculum", arguments: { q: "systems", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "get_curriculum_item", arguments: { kind: "concept", id: "load-balancing" }, shape: "item" },
+      { tool: "list_learning_roadmaps", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_system_design_cases", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_curriculum", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
+    ],
+    negativeTools: ["update_progress", "save_notes", "run_interview_code"],
+  },
+  "what-it-takes-to-win": {
+    positive: [
+      { tool: "search_people_and_milestones", arguments: { q: "Microsoft", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "get_person_research_record", arguments: { id: "bill-gates" }, shape: "item" },
+      { tool: "list_research_categories", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_people_and_milestones", arguments: { category: "Founder/Entrepreneur", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_people_and_milestones", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
+    ],
+    negativeTools: ["read_unpublished_research", "edit_person_record", "download_source_archive"],
+  },
+  "saas-maker": {
+    positive: [
+      { tool: "search_public_products", arguments: { q: "CodeVetter", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "get_public_product", arguments: { id: "codevetter" }, shape: "item" },
+      { tool: "list_public_surfaces", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "list_public_learnings", arguments: { limit: 1, offset: 0 }, shape: "page" },
+      { tool: "search_public_products", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
+    ],
+    negativeTools: ["get_private_registry", "deploy_product", "read_owner_credentials"],
+  },
+  drank: {
+    positive: [
+      { tool: "get_domain_rating", arguments: { domain: "example.com" }, shape: "item" },
+      { tool: "get_domain_rating", arguments: { domain: "openai.com" }, shape: "item" },
+      { tool: "get_domain_rating", arguments: { domain: "cloudflare.com" }, shape: "item" },
+      { tool: "get_domain_rating", arguments: { domain: "github.com" }, shape: "item" },
+      { tool: "get_domain_rating", arguments: { domain: "significanthobbies.com" }, shape: "item" },
+    ],
+    negativeTools: ["get_ahrefs_api_key", "save_domain_history", "query_private_domain"],
+  },
+  looptv: {
+    positive: [
+      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
+      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
+      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
+      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
+      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
+    ],
+    negativeTools: ["control_playback", "edit_station", "download_full_catalog"],
+  },
 });
 
 interface ListingTest {
@@ -140,6 +200,7 @@ export interface SubmissionEvaluationReceipt {
 
 export interface SubmissionEvaluationOptions {
   fetchImpl?: typeof fetch;
+  includePrepared?: boolean;
   manifest?: { plugins: Listing[] };
   now?: () => Date;
 }
@@ -330,8 +391,14 @@ export async function runPublicSubmissionEvaluations(
 ): Promise<SubmissionEvaluationReceipt> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const manifest = options.manifest ?? await readManifest();
-  const listings = manifest.plugins.filter(({ id }) => id in PUBLIC_EVALUATIONS);
-  if (listings.length !== 4) throw new EvaluationError("public_listing_count_invalid");
+  const listings = manifest.plugins.filter(({ id, mcpUrl }) => {
+    if (!(id in PUBLIC_EVALUATIONS)) return false;
+    const url = new URL(mcpUrl);
+    const route = hostedRoute(url.pathname, url.hostname);
+    return options.includePrepared || route?.productionStatus !== "prepared";
+  });
+  const expectedListingCount = options.includePrepared ? 10 : 4;
+  if (listings.length !== expectedListingCount) throw new EvaluationError("public_listing_count_invalid");
   const nested = await Promise.all(listings.map(async (listing, pluginIndex) => {
     const definition = PUBLIC_EVALUATIONS[listing.id];
     const url = new URL(listing.mcpUrl);

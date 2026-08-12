@@ -36,9 +36,15 @@ independent domain challenge per submission.
 | High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | Published signal, brief, and track-record data |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
+| PostTrainLLM | `https://mcp.posttrainllm.com/posttrainllm/mcp` | None | Published model leaderboard, gallery, and benchmark definitions |
+| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | None | Published curriculum and system-design catalogs |
+| What It Takes to Win | `https://paths-mcp.significanthobbies.com/what-it-takes-to-win/mcp` | None | Bounded published research search index |
+| SaaS Maker | `https://mcp.sassmaker.com/saas-maker/mcp` | None | Privacy-checked public `/api/ai` portfolio projection |
+| Drank | `https://domains-mcp.sassmaker.com/drank/mcp` | None | Live rating for one validated public hostname |
+| LoopTV | `https://tv-mcp.significanthobbies.com/looptv/mcp` | None | Compact public catalog freshness and station summary |
 
 Setline remains available only on the compatibility endpoint and is not one of
-the seven public submissions. It retains the existing owner-only token bridge
+the thirteen listing packages. It retains the existing owner-only token bridge
 until its separate account boundary is ready.
 
 Research Papers' local corpus search, detail, similarity, RAG, PDFs, and ingest
@@ -106,6 +112,12 @@ and every other hosted product must not be added to Codex.
 | High Signal | Public surface live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Research Papers | Public exports live | Export-only branded route live | No auth | OpenAI portal draft/submission pending |
+| PostTrainLLM | Public leaderboard and gallery live | Gateway route implemented; not deployed | No auth | Activation pending |
+| SWE Interview Prep | Public catalogs live | Gateway route implemented; not deployed | No auth | Activation pending |
+| What It Takes to Win | Public bounded index live | Gateway route implemented; not deployed | No auth | Activation pending |
+| SaaS Maker | Public agent projection live | Gateway route implemented; not deployed | No auth | Activation pending |
+| Drank | Public validated lookup live | Gateway route implemented; not deployed | No auth | Activation pending |
+| LoopTV | Public compact summary live | Gateway route implemented; not deployed | No auth | Activation pending |
 
 No OAuth KV is required. The existing workers.dev gateway remains active. The
 three federated product releases and seven branded custom domains are live from
@@ -113,6 +125,11 @@ reviewed, green `main` revisions. Credential-free OAuth activation and
 representative public live calls pass. OpenAI portal drafts, per-draft domain
 challenge secrets, reviewer-account fixtures, retained ChatGPT evaluations,
 review, and publication remain; Setline is not part of this publication.
+
+The six expansion routes are implemented but intentionally not deployed by
+this change. Their domains, production monitoring claims, OpenAI drafts, and
+challenge secrets remain activation work. The full eligibility review is in
+[`docs/non-ios-eligibility.md`](docs/non-ios-eligibility.md).
 
 ## Development and verification
 
@@ -169,7 +186,8 @@ Generated binding types come from `wrangler types`; rerun
 ## Production monitoring
 
 `pnpm monitor:production` runs the credential-free production contract suite.
-It verifies all seven health and hostname-isolation boundaries; public MCP
+Once the expansion is activated, it verifies all thirteen health and
+hostname-isolation boundaries; public MCP
 initialization, read-only tool catalogs, representative bounded reads, and
 mutation rejection; plus private OAuth challenges and metadata. The JSON
 receipt retains only status codes, protocol/schema fields, server/tool names,
@@ -195,10 +213,11 @@ records, upstream failures, or credentials.
 pnpm eval:submission:public -- --output public-submission-evals.json
 ```
 
-This protocol suite proves 32 public server cases. It deliberately reports
+With all ten anonymous listings active, this protocol suite proves 80 public
+server cases. It deliberately reports
 `private_authenticated_evaluations` and `chatgpt_model_behavior` as manual
 gates: the three OAuth plugins still require owner and non-owner browser sign-in,
-and all seven prompt-level cases must still be exercised in ChatGPT before
+and all thirteen prompt-level packages must still be exercised in ChatGPT before
 submission.
 
 ## Activation and revocation

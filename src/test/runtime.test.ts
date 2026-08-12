@@ -287,6 +287,70 @@ test("public operation routes stay on their verified anonymous surfaces", () => 
     offset: 0,
   });
   assert.equal(new URL(readerSearch, "https://reader.example").searchParams.get("projectId"), "owner_default");
+  assert.equal(APP_DEFINITIONS.posttrainllm.operations.leaderboard!.path({}), "/data/leaderboard.json");
+  assert.equal(APP_DEFINITIONS.posttrainllm.operations.gallery!.path({}), "/gallery/manifest.json");
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.curriculum!.path({}), "/curriculum/catalog.json");
+  assert.equal(APP_DEFINITIONS["what-it-takes-to-win"].operations.index!.path({}), "/data/search-index.json");
+  assert.equal(APP_DEFINITIONS["saas-maker"].operations.catalog!.path({}), "/api/ai");
+  const normalizedDomain = APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("https://Example.com/path");
+  assert.equal(APP_DEFINITIONS.drank.operations.rating!.path({ domain: normalizedDomain }), "/api/dr?target=example.com");
+  assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("127.0.0.1"));
+  assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("http://example.com"));
+  assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("[::1]"));
+  assert.equal(APP_DEFINITIONS.looptv.operations.summary!.path({}), "/catalog-summary.json");
+});
+
+test("new public catalogs normalize only their approved collections", () => {
+  const models = normalizeToolResult({
+    app: APP_DEFINITIONS.posttrainllm,
+    toolName: "search_published_models",
+    tool: APP_DEFINITIONS.posttrainllm.tools.search_published_models!,
+    payload: { entries: [{ id: "tiny", name: "TinyStories", scores: { hellaswag: 0.5 } }] },
+    args: { q: "tiny", benchmark: "hellaswag", limit: 10, offset: 0 },
+    sourceUrl: "https://posttrainllm.com/data/leaderboard.json",
+  });
+  assert.equal(models.items?.[0]?.id, "tiny");
+
+  const curriculum = normalizeToolResult({
+    app: APP_DEFINITIONS["swe-interview-prep"],
+    toolName: "search_curriculum",
+    tool: APP_DEFINITIONS["swe-interview-prep"].tools.search_curriculum!,
+    payload: { concepts: [{ id: "load-balancing" }], tracks: [{ id: "backend" }], roadmaps: [] },
+    args: { kind: "concept", limit: 10, offset: 0 },
+    sourceUrl: "https://learn.significanthobbies.com/curriculum/catalog.json",
+  });
+  assert.deepEqual(curriculum.items?.map(({ id }) => id), ["load-balancing"]);
+
+  const categories = normalizeToolResult({
+    app: APP_DEFINITIONS["what-it-takes-to-win"],
+    toolName: "list_research_categories",
+    tool: APP_DEFINITIONS["what-it-takes-to-win"].tools.list_research_categories!,
+    payload: [
+      { id: "one", category: "Founder/Entrepreneur" },
+      { id: "two", category: "Founder/Entrepreneur" },
+      { id: "three", category: "Athlete" },
+    ],
+    args: { limit: 10, offset: 0 },
+    sourceUrl: "https://paths.significanthobbies.com/data/search-index.json",
+  });
+  assert.deepEqual(categories.items, [
+    { id: "athlete", name: "Athlete" },
+    { id: "founder-entrepreneur", name: "Founder/Entrepreneur" },
+  ]);
+});
+
+test("new public catalog tools fail closed when their required collection disappears", () => {
+  assert.throws(
+    () => normalizeToolResult({
+      app: APP_DEFINITIONS.posttrainllm,
+      toolName: "search_published_models",
+      tool: APP_DEFINITIONS.posttrainllm.tools.search_published_models!,
+      payload: { unexpected: [] },
+      args: {},
+      sourceUrl: "https://posttrainllm.com/data/leaderboard.json",
+    }),
+    /missing its public collection/i,
+  );
 });
 
 for (const appId of Object.keys(APP_DEFINITIONS) as AppId[]) {

@@ -12,5 +12,11 @@ This is the review map for every upstream operation. Anything absent is unavaila
 | Significant Hobbies | `GET /api/mcp/hobbies`, `/experiences`, `/experiences/:slug`, `/timelines`, `/timelines/:id` | every private feature and any timeline not exactly `PUBLIC` |
 | Research Papers | Local `GET /search`, `/papers/:id`, `/similar/:id`, `/hot`, `/sleepers`; public `/paths.json`; fallback `/data/hot.json`, `/data/sleepers.json` | `/rag/query`, PDF delivery, ClickHouse/SQL, ingest, enrichment, jobs, operator routes |
 | Setline | `GET /api/mcp/programme`, `/templates`, `/history`, `/history/:id`, `/progress` | `/api/app/state`, execution, programme changes, recommendations/actions, sync, import, account routes |
+| PostTrainLLM | `GET /data/leaderboard.json`, `/gallery/manifest.json` | training, inference, uploads, checkpoints, publication, local state |
+| SWE Interview Prep | `GET /curriculum/catalog.json`, `/system-design/catalog.json` | progress, notes, reviews, chats, accounts, code execution |
+| What It Takes to Win | `GET /data/search-index.json` | full people JSON, unpublished notes, source archives, editing |
+| SaaS Maker | `GET /api/ai` | private Fleet registry, operations, deployments, credentials, owner data |
+| Drank | `GET /api/dr?target=<validated-public-hostname>` | provider credentials, private targets, persistence, arbitrary provider calls |
+| LoopTV | `GET /catalog-summary.json` | full catalog, playback, station changes, arbitrary YouTube calls |
 
 The shared runtime enforces GET, relative fixed paths, configured origins, a 10-second default timeout, at most one retry, a one-megabyte upstream bound, structured output bounds, credential-key redaction, and per-app credentials that are never accepted as tool input.

@@ -11,6 +11,7 @@ interface HostedRouteBase {
   oauthAudience?: string;
   scope?: string;
   tokenSecret?: PrivateTokenSecret;
+  productionStatus?: "prepared";
 }
 
 export type PrivateTokenSecret = "SETLINE_MCP_TOKEN";
@@ -22,7 +23,13 @@ export type OpenAIChallengeSecret =
   | "OPENAI_CHALLENGE_STARBOARD"
   | "OPENAI_CHALLENGE_HIGH_SIGNAL"
   | "OPENAI_CHALLENGE_SIGNIFICANT_HOBBIES"
-  | "OPENAI_CHALLENGE_RESEARCH_PAPERS";
+  | "OPENAI_CHALLENGE_RESEARCH_PAPERS"
+  | "OPENAI_CHALLENGE_POSTTRAINLLM"
+  | "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP"
+  | "OPENAI_CHALLENGE_WHAT_IT_TAKES_TO_WIN"
+  | "OPENAI_CHALLENGE_SAAS_MAKER"
+  | "OPENAI_CHALLENGE_DRANK"
+  | "OPENAI_CHALLENGE_LOOPTV";
 
 export interface AdapterHostedRouteDefinition extends HostedRouteBase {
   kind: "adapter";
@@ -162,6 +169,60 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     hosts: ["papers-mcp.highsignal.app"],
     challengeSecret: "OPENAI_CHALLENGE_RESEARCH_PAPERS",
     app: hostedResearchPapers,
+  },
+  "/posttrainllm/mcp": {
+    id: "posttrainllm",
+    kind: "adapter",
+    audience: "public",
+    hosts: ["mcp.posttrainllm.com"],
+    challengeSecret: "OPENAI_CHALLENGE_POSTTRAINLLM",
+    productionStatus: "prepared",
+    app: APP_DEFINITIONS.posttrainllm,
+  },
+  "/swe-interview-prep/mcp": {
+    id: "swe-interview-prep",
+    kind: "adapter",
+    audience: "public",
+    hosts: ["learn-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP",
+    productionStatus: "prepared",
+    app: APP_DEFINITIONS["swe-interview-prep"],
+  },
+  "/what-it-takes-to-win/mcp": {
+    id: "what-it-takes-to-win",
+    kind: "adapter",
+    audience: "public",
+    hosts: ["paths-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_WHAT_IT_TAKES_TO_WIN",
+    productionStatus: "prepared",
+    app: APP_DEFINITIONS["what-it-takes-to-win"],
+  },
+  "/saas-maker/mcp": {
+    id: "saas-maker",
+    kind: "adapter",
+    audience: "public",
+    hosts: ["mcp.sassmaker.com"],
+    challengeSecret: "OPENAI_CHALLENGE_SAAS_MAKER",
+    productionStatus: "prepared",
+    app: APP_DEFINITIONS["saas-maker"],
+  },
+  "/drank/mcp": {
+    id: "drank",
+    kind: "adapter",
+    audience: "public",
+    hosts: ["domains-mcp.sassmaker.com"],
+    challengeSecret: "OPENAI_CHALLENGE_DRANK",
+    productionStatus: "prepared",
+    app: APP_DEFINITIONS.drank,
+  },
+  "/looptv/mcp": {
+    id: "looptv",
+    kind: "adapter",
+    audience: "public",
+    hosts: ["tv-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_LOOPTV",
+    productionStatus: "prepared",
+    app: APP_DEFINITIONS.looptv,
   },
 });
 

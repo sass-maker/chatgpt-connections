@@ -19,6 +19,12 @@ const REPRESENTATIVE_CALLS: Readonly<Record<string, RepresentativeCall>> = Objec
   "high-signal": { name: "search_signals", arguments: { q: "AI", limit: 1, offset: 0 } },
   "significant-hobbies": { name: "search_hobbies", arguments: { q: "astronomy", limit: 1, offset: 0 } },
   "research-papers": { name: "list_hot_papers", arguments: { limit: 1, offset: 0 } },
+  posttrainllm: { name: "search_published_models", arguments: { limit: 1, offset: 0 } },
+  "swe-interview-prep": { name: "search_curriculum", arguments: { q: "systems", limit: 1, offset: 0 } },
+  "what-it-takes-to-win": { name: "search_people_and_milestones", arguments: { q: "Microsoft", limit: 1, offset: 0 } },
+  "saas-maker": { name: "search_public_products", arguments: { q: "CodeVetter", limit: 1, offset: 0 } },
+  drank: { name: "get_domain_rating", arguments: { domain: "example.com" } },
+  looptv: { name: "get_catalog_summary", arguments: {} },
 });
 
 type MonitorEvidence = Record<string, boolean | number | string | string[]>;
@@ -41,6 +47,7 @@ export interface ProductionMonitorReceipt {
 
 export interface ProductionMonitorOptions {
   fetchImpl?: typeof fetch;
+  includePrepared?: boolean;
   issuer?: string;
   now?: () => Date;
 }
@@ -128,8 +135,9 @@ async function json(response: Response, code: string): Promise<Record<string, un
   }
 }
 
-function publishedRoutes(): Array<{ path: string; route: HostedRouteDefinition; origin: string }> {
+function publishedRoutes(includePrepared = false): Array<{ path: string; route: HostedRouteDefinition; origin: string }> {
   return Object.entries(HOSTED_ROUTES).flatMap(([path, route]) => {
+    if (!includePrepared && route.productionStatus === "prepared") return [];
     const host = route.challengeSecret ? route.hosts[0] : undefined;
     return host ? [{ path, route, origin: `https://${host}` }] : [];
   });
@@ -402,8 +410,9 @@ export async function runProductionMonitor(
 ): Promise<ProductionMonitorReceipt> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const issuer = options.issuer ?? PRODUCTION_AUTH0_ISSUER;
-  const entries = publishedRoutes();
-  if (entries.length !== 7) throw new MonitorError("published_route_count_invalid");
+  const entries = publishedRoutes(options.includePrepared);
+  const expectedRouteCount = options.includePrepared ? 13 : 7;
+  if (entries.length !== expectedRouteCount) throw new MonitorError("published_route_count_invalid");
   const nested = await Promise.all(entries.map((entry, index) => {
     const wrongPath = entries[(index + 1) % entries.length]?.path;
     if (!wrongPath || hostedRoute(wrongPath, new URL(entry.origin).hostname)) {

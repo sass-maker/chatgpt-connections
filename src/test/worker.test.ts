@@ -114,6 +114,12 @@ test("hosted route registry is fixed and public Research Papers exposes only exp
     "/high-signal/mcp",
     "/significant-hobbies/mcp",
     "/research-papers/mcp",
+    "/posttrainllm/mcp",
+    "/swe-interview-prep/mcp",
+    "/what-it-takes-to-win/mcp",
+    "/saas-maker/mcp",
+    "/drank/mcp",
+    "/looptv/mcp",
   ]);
   const papers = HOSTED_ROUTES["/research-papers/mcp"]!;
   assert.equal(papers.kind, "adapter");

@@ -114,16 +114,24 @@ const productionFetch: typeof fetch = async (input, init) => {
 test("production monitor retains only redacted contract evidence", async () => {
   const receipt = await runProductionMonitor({
     fetchImpl: productionFetch,
+    includePrepared: true,
     now: () => new Date("2026-08-12T00:00:00.000Z"),
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 39, failed: 0, total: 39 });
+  assert.deepEqual(receipt.summary, { passed: 75, failed: 0, total: 75 });
   assert.equal(receipt.checkedAt, "2026-08-12T00:00:00.000Z");
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("must-never-enter-receipt"), false);
   assert.equal(serialized.includes("password"), false);
-  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 4);
+  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 10);
   assert.equal(receipt.checks.filter(({ id }) => id === "oauth-resource").length, 3);
+  assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 13);
+});
+
+test("production monitor excludes prepared routes until activation", async () => {
+  const receipt = await runProductionMonitor({ fetchImpl: productionFetch });
+  assert.deepEqual(receipt.summary, { passed: 39, failed: 0, total: 39 });
+  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 4);
   assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 7);
 });
 

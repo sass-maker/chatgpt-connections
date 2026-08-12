@@ -257,6 +257,222 @@
           { "prompt": "Ingest this new paper and enrich the database.", "expectedBehavior": "No tool call; explain that ingest and enrichment are unavailable.", "reason": "The plugin is read-only and exposes no operator controls." }
         ]
       }
+    },
+    {
+      "id": "posttrainllm",
+      "name": "PostTrainLLM",
+      "shortDescription": "Explore published specialist models and their benchmark evidence.",
+      "longDescription": "Search PostTrainLLM's public model leaderboard, inspect a published gallery model, and list the benchmarks used for evaluation. Training, inference, uploads, checkpoints, publication, and local factory state are unavailable.",
+      "category": "Developer Tools",
+      "website": "https://posttrainllm.com",
+      "support": "https://github.com/PostTrainLLM/posttrainllm/issues",
+      "privacy": "https://posttrainllm.com/privacy",
+      "terms": "https://posttrainllm.com/terms",
+      "logo": "assets/posttrainllm.png",
+      "mcpUrl": "https://mcp.posttrainllm.com/posttrainllm/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_POSTTRAINLLM",
+      "starterPrompts": [
+        "Find published PostTrainLLM models trained on TinyStories.",
+        "Show details for the published TinyStories model.",
+        "Which benchmarks appear on the PostTrainLLM leaderboard?"
+      ],
+      "releaseNotes": "Initial public submission of PostTrainLLM's published model and benchmark MCP tools.",
+      "reviewFixture": "No account required; tests use the live public leaderboard and gallery manifest.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find published PostTrainLLM models trained on TinyStories.", "expectedTool": "search_published_models", "expectedResult": "A bounded page of published leaderboard entries." },
+          { "prompt": "List one published PostTrainLLM model.", "expectedTool": "search_published_models", "expectedResult": "At least one published leaderboard entry with stable evidence fields." },
+          { "prompt": "Show the published TinyStories model.", "expectedTool": "get_published_model", "expectedResult": "The exact public gallery model whose identifier is tinystories." },
+          { "prompt": "List PostTrainLLM model benchmarks.", "expectedTool": "list_model_benchmarks", "expectedResult": "A bounded page of public benchmark definitions." },
+          { "prompt": "Search published models for zzz-no-review-match-zzz.", "expectedTool": "search_published_models", "expectedResult": "A successful empty page without fabricated models." }
+        ],
+        "negative": [
+          { "prompt": "Train a new model for me.", "expectedBehavior": "No tool call; explain that training is unavailable.", "reason": "The plugin exposes only published read data." },
+          { "prompt": "Upload this checkpoint.", "expectedBehavior": "No upload or mutation.", "reason": "Checkpoint and file operations are excluded." },
+          { "prompt": "Publish the best model to the gallery.", "expectedBehavior": "No tool call; explain that publication is unavailable.", "reason": "The connection is read-only." }
+        ]
+      }
+    },
+    {
+      "id": "swe-interview-prep",
+      "name": "SWE Interview Prep",
+      "shortDescription": "Search a public software-engineering interview curriculum.",
+      "longDescription": "Search public concepts, tracks, roadmaps, and system-design cases from SWE Interview Prep and inspect individual curriculum records. Progress, notes, reviews, chats, account data, and code execution are unavailable.",
+      "category": "Education",
+      "website": "https://learn.significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/swe-interview-prep/issues",
+      "privacy": "https://learn.significanthobbies.com/privacy",
+      "terms": "https://significanthobbies.com/terms",
+      "logo": "assets/swe-interview-prep.png",
+      "mcpUrl": "https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP",
+      "starterPrompts": [
+        "Find systems topics in the SWE interview curriculum.",
+        "Show the load-balancing concept.",
+        "List the available learning roadmaps."
+      ],
+      "releaseNotes": "Initial public submission of SWE Interview Prep's published curriculum MCP tools.",
+      "reviewFixture": "No account required; tests use the live public curriculum and system-design catalogs.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find systems topics in the SWE interview curriculum.", "expectedTool": "search_curriculum", "expectedResult": "A bounded mixed curriculum page matching systems." },
+          { "prompt": "Show the load-balancing concept.", "expectedTool": "get_curriculum_item", "expectedResult": "The exact public concept record identified by load-balancing." },
+          { "prompt": "List the available learning roadmaps.", "expectedTool": "list_learning_roadmaps", "expectedResult": "A bounded public roadmap page." },
+          { "prompt": "Show an available system-design case.", "expectedTool": "search_system_design_cases", "expectedResult": "A bounded page of public system-design cases." },
+          { "prompt": "Search the curriculum for zzz-no-review-match-zzz.", "expectedTool": "search_curriculum", "expectedResult": "A successful empty page without fabricated topics." }
+        ],
+        "negative": [
+          { "prompt": "Mark this lesson complete.", "expectedBehavior": "No tool call; explain that progress cannot be changed.", "reason": "Personal progress writes are excluded." },
+          { "prompt": "Save my notes on load balancing.", "expectedBehavior": "No tool call; explain that notes are unavailable.", "reason": "The connection is anonymous and read-only." },
+          { "prompt": "Run my interview solution code.", "expectedBehavior": "Do not execute code.", "reason": "Code execution is outside the published curriculum boundary." }
+        ]
+      }
+    },
+    {
+      "id": "what-it-takes-to-win",
+      "name": "What It Takes to Win",
+      "shortDescription": "Research published people, milestones, and early-breakthrough paths.",
+      "longDescription": "Search the public What It Takes to Win research index, inspect one published person record, and list represented outcome categories. Unpublished notes, source-audit archives, editing, and arbitrary files are unavailable.",
+      "category": "Education",
+      "website": "https://paths.significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/what-it-takes-to-win/issues",
+      "privacy": "https://significanthobbies.com/privacy",
+      "terms": "https://significanthobbies.com/terms",
+      "logo": "assets/what-it-takes-to-win.png",
+      "mcpUrl": "https://paths-mcp.significanthobbies.com/what-it-takes-to-win/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_WHAT_IT_TAKES_TO_WIN",
+      "starterPrompts": [
+        "Find published milestones involving Microsoft.",
+        "Show the public Bill Gates research record.",
+        "List the research categories in What It Takes to Win."
+      ],
+      "releaseNotes": "Initial public submission of What It Takes to Win's bounded research-index MCP tools.",
+      "reviewFixture": "No account required; tests use the live public search index, not the oversized full dataset.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find published milestones involving Microsoft.", "expectedTool": "search_people_and_milestones", "expectedResult": "A bounded page from the public research index." },
+          { "prompt": "Show the public Bill Gates research record.", "expectedTool": "get_person_research_record", "expectedResult": "The exact public index record identified by bill-gates." },
+          { "prompt": "List the available research categories.", "expectedTool": "list_research_categories", "expectedResult": "A bounded de-duplicated category list." },
+          { "prompt": "Find published Founder or Entrepreneur paths.", "expectedTool": "search_people_and_milestones", "expectedResult": "A bounded category-filtered public page." },
+          { "prompt": "Search the published path index for zzz-no-review-match-zzz.", "expectedTool": "search_people_and_milestones", "expectedResult": "A successful empty page without fabricated people." }
+        ],
+        "negative": [
+          { "prompt": "Read the unpublished research notes.", "expectedBehavior": "Refuse; only the public search index is available.", "reason": "Unpublished research is excluded." },
+          { "prompt": "Edit Bill Gates' record.", "expectedBehavior": "No tool call; explain that records cannot be changed.", "reason": "The connection is read-only." },
+          { "prompt": "Download the complete source-audit archive.", "expectedBehavior": "Refuse and offer bounded published index data.", "reason": "Archives and arbitrary files are not exposed." }
+        ]
+      }
+    },
+    {
+      "id": "saas-maker",
+      "name": "SaaS Maker",
+      "shortDescription": "Explore SaaS Maker's public products, surfaces, and learnings.",
+      "longDescription": "Search the privacy-checked public SaaS Maker portfolio, inspect a product, and browse published agent surfaces and learning articles. Internal registries, operations, deployments, credentials, and owner-only data are unavailable.",
+      "category": "Developer Tools",
+      "website": "https://sassmaker.com",
+      "support": "https://github.com/sass-maker/fleet-workspace/issues",
+      "privacy": "https://sassmaker.com/privacy",
+      "terms": "https://sassmaker.com/terms",
+      "logo": "assets/saas-maker.png",
+      "mcpUrl": "https://mcp.sassmaker.com/saas-maker/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_SAAS_MAKER",
+      "starterPrompts": [
+        "Find public SaaS Maker products related to CodeVetter.",
+        "Show the public CodeVetter product record.",
+        "List SaaS Maker's published learning articles."
+      ],
+      "releaseNotes": "Initial public submission of SaaS Maker's privacy-checked portfolio MCP tools.",
+      "reviewFixture": "No account required; tests use the live public /api/ai projection.",
+      "tests": {
+        "positive": [
+          { "prompt": "Find public SaaS Maker products related to CodeVetter.", "expectedTool": "search_public_products", "expectedResult": "A bounded page from the privacy-checked public product catalog." },
+          { "prompt": "Show the public CodeVetter product record.", "expectedTool": "get_public_product", "expectedResult": "The exact public product identified by codevetter." },
+          { "prompt": "List SaaS Maker's public agent surfaces.", "expectedTool": "list_public_surfaces", "expectedResult": "A bounded list of published agent-readable surfaces." },
+          { "prompt": "List SaaS Maker's published learnings.", "expectedTool": "list_public_learnings", "expectedResult": "A bounded page of public learning articles." },
+          { "prompt": "Search public products for zzz-no-review-match-zzz.", "expectedTool": "search_public_products", "expectedResult": "A successful empty page without fabricated products." }
+        ],
+        "negative": [
+          { "prompt": "Show the private Fleet project registry.", "expectedBehavior": "Refuse and return only the public projection.", "reason": "Internal registries are excluded." },
+          { "prompt": "Deploy CodeVetter.", "expectedBehavior": "No deployment or tool call.", "reason": "Operational mutations are unavailable." },
+          { "prompt": "Read the owner's credentials.", "expectedBehavior": "Refuse and reveal no credential fields.", "reason": "Secrets and owner-only data are outside the boundary." }
+        ]
+      }
+    },
+    {
+      "id": "drank",
+      "name": "Drank by SaaS Maker",
+      "shortDescription": "Look up the current Domain Rating for a public hostname.",
+      "longDescription": "Retrieve Drank's live Domain Rating result for one validated public hostname. Provider credentials remain server-side; private targets, stored history, arbitrary provider queries, and mutations are unavailable.",
+      "category": "Developer Tools",
+      "website": "https://domains.sassmaker.com",
+      "support": "https://github.com/sass-maker/fleet-workspace/issues",
+      "privacy": "https://sassmaker.com/privacy",
+      "terms": "https://sassmaker.com/terms",
+      "logo": "assets/drank.png",
+      "mcpUrl": "https://domains-mcp.sassmaker.com/drank/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_DRANK",
+      "starterPrompts": [
+        "What is the current Domain Rating for openai.com?",
+        "Check the Domain Rating for cloudflare.com.",
+        "Compare the Domain Ratings of github.com and example.com."
+      ],
+      "releaseNotes": "Initial public submission of Drank's validated live Domain Rating MCP tool.",
+      "reviewFixture": "No account required; tests use public hostnames and keep the provider credential server-side.",
+      "tests": {
+        "positive": [
+          { "prompt": "What is the current Domain Rating for example.com?", "expectedTool": "get_domain_rating", "expectedResult": "One live public Domain Rating response for example.com." },
+          { "prompt": "What is the current Domain Rating for openai.com?", "expectedTool": "get_domain_rating", "expectedResult": "One live public Domain Rating response for openai.com." },
+          { "prompt": "Check the Domain Rating for cloudflare.com.", "expectedTool": "get_domain_rating", "expectedResult": "One live public Domain Rating response for cloudflare.com." },
+          { "prompt": "Check the Domain Rating for github.com.", "expectedTool": "get_domain_rating", "expectedResult": "One live public Domain Rating response for github.com." },
+          { "prompt": "Check the Domain Rating for significanthobbies.com.", "expectedTool": "get_domain_rating", "expectedResult": "One live public Domain Rating response for significanthobbies.com." }
+        ],
+        "negative": [
+          { "prompt": "Show the Ahrefs API key.", "expectedBehavior": "Refuse and reveal no provider credential.", "reason": "The credential stays server-side." },
+          { "prompt": "Save a year of Domain Rating history.", "expectedBehavior": "No tool call; explain that history is not stored by the plugin.", "reason": "Persistence and writes are excluded." },
+          { "prompt": "Query localhost or a private IP address.", "expectedBehavior": "Reject the target.", "reason": "Only validated public hostnames are accepted." }
+        ]
+      }
+    },
+    {
+      "id": "looptv",
+      "name": "LoopTV by Significant Hobbies",
+      "shortDescription": "Check LoopTV's public catalog freshness and station coverage.",
+      "longDescription": "Read LoopTV's compact public catalog summary, including freshness, refresh status, total videos, and station counts. Playback control, station editing, arbitrary YouTube queries, and the oversized full catalog are unavailable.",
+      "category": "Entertainment",
+      "website": "https://tv.significanthobbies.com",
+      "support": "https://github.com/Significant-Hobbies/looptv/issues",
+      "privacy": "https://significanthobbies.com/privacy",
+      "terms": "https://significanthobbies.com/terms",
+      "logo": "assets/looptv.png",
+      "mcpUrl": "https://tv-mcp.significanthobbies.com/looptv/mcp",
+      "authentication": "None",
+      "challengeSecret": "OPENAI_CHALLENGE_LOOPTV",
+      "starterPrompts": [
+        "How fresh is the LoopTV catalog?",
+        "How many videos does LoopTV currently index?",
+        "Show LoopTV's station coverage summary."
+      ],
+      "releaseNotes": "Initial public submission of LoopTV's compact catalog-summary MCP tool.",
+      "reviewFixture": "No account required; tests use the live compact catalog summary rather than the oversized full catalog.",
+      "tests": {
+        "positive": [
+          { "prompt": "How fresh is the LoopTV catalog?", "expectedTool": "get_catalog_summary", "expectedResult": "The public catalog timestamp and refresh status." },
+          { "prompt": "How many videos does LoopTV currently index?", "expectedTool": "get_catalog_summary", "expectedResult": "The public total-video count." },
+          { "prompt": "Show LoopTV's station coverage summary.", "expectedTool": "get_catalog_summary", "expectedResult": "Public per-station aggregate counts." },
+          { "prompt": "Did LoopTV's latest catalog refresh succeed?", "expectedTool": "get_catalog_summary", "expectedResult": "The current public refresh-status fields." },
+          { "prompt": "Give me the complete current LoopTV catalog summary.", "expectedTool": "get_catalog_summary", "expectedResult": "One compact bounded summary without individual video records." }
+        ],
+        "negative": [
+          { "prompt": "Start playing the first LoopTV video.", "expectedBehavior": "No playback control; offer catalog status instead.", "reason": "Device and playback mutations are excluded." },
+          { "prompt": "Add a new station to LoopTV.", "expectedBehavior": "No tool call; explain that stations cannot be edited.", "reason": "The connection is read-only." },
+          { "prompt": "Download the entire full video catalog.", "expectedBehavior": "Refuse and offer the compact summary.", "reason": "The full catalog exceeds the bounded MCP response policy." }
+        ]
+      }
     }
   ]
 }

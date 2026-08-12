@@ -17,6 +17,24 @@ const knownNegativeTools = new Set([
   "search_private_corpus",
   "send_starboard_message",
   "update_hobby",
+  "train_model",
+  "upload_checkpoint",
+  "publish_model",
+  "update_progress",
+  "save_notes",
+  "run_interview_code",
+  "read_unpublished_research",
+  "edit_person_record",
+  "download_source_archive",
+  "get_private_registry",
+  "deploy_product",
+  "read_owner_credentials",
+  "get_ahrefs_api_key",
+  "save_domain_history",
+  "query_private_domain",
+  "control_playback",
+  "edit_station",
+  "download_full_catalog",
 ]);
 
 const evaluationFetch: typeof fetch = async (input, init) => {
@@ -60,21 +78,27 @@ const evaluationFetch: typeof fetch = async (input, init) => {
   });
 };
 
-test("public submission evaluations run all 32 cases and retain only contract evidence", async () => {
+test("public submission evaluations run all 80 cases and retain only contract evidence", async () => {
   const receipt = await runPublicSubmissionEvaluations({
     fetchImpl: evaluationFetch,
+    includePrepared: true,
     now: () => new Date("2026-08-12T00:00:00.000Z"),
   });
   assert.equal(receipt.ok, true);
   assert.equal(receipt.scope, "public_protocol");
-  assert.deepEqual(receipt.summary, { passed: 32, failed: 0, total: 32 });
+  assert.deepEqual(receipt.summary, { passed: 80, failed: 0, total: 80 });
   assert.deepEqual(receipt.manualGates, ["private_authenticated_evaluations", "chatgpt_model_behavior"]);
-  assert.equal(receipt.checks.filter(({ kind }) => kind === "positive").length, 20);
-  assert.equal(receipt.checks.filter(({ kind }) => kind === "negative").length, 12);
+  assert.equal(receipt.checks.filter(({ kind }) => kind === "positive").length, 50);
+  assert.equal(receipt.checks.filter(({ kind }) => kind === "negative").length, 30);
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("must-never-enter-receipt"), false);
   assert.equal(serialized.includes("password"), false);
   assert.equal(serialized.includes("zzz-no-review-match-zzz"), false);
+});
+
+test("public submission evaluations exclude prepared listings until activation", async () => {
+  const receipt = await runPublicSubmissionEvaluations({ fetchImpl: evaluationFetch });
+  assert.deepEqual(receipt.summary, { passed: 32, failed: 0, total: 32 });
 });
 
 test("public submission evaluations retain stable failures without response bodies", async () => {
