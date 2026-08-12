@@ -68,7 +68,7 @@ function authorizationFor(path: string, overrides: Partial<OAuthGrantProps> = {}
 }
 
 async function nativeMcpResponse(request: Request): Promise<Response> {
-  const message = await request.clone().json() as { id?: number; method?: string };
+  const message = await request.clone().json() as { id?: number; method?: string; params?: { name?: string } };
   if (message.method === "initialize") {
     return Response.json({
       jsonrpc: "2.0",
@@ -80,18 +80,32 @@ async function nativeMcpResponse(request: Request): Promise<Response> {
       },
     });
   }
+  if (message.method === "tools/call") {
+    return Response.json({
+      jsonrpc: "2.0",
+      id: message.id,
+      result: {
+        structuredContent: { schemaVersion: "1", ok: true, tool: message.params?.name, items: [{ mal_id: 1 }] },
+      },
+    });
+  }
+  const publicTools = [
+    "search_anime", "search_manga", "get_anime_detail", "get_manga_detail",
+    "get_anime_stats", "get_random_anime",
+  ];
+  const personalTools = [
+    "list_watchlist", "list_manga_watchlist", "list_watchlist_tags", "get_watchlist_enriched",
+  ];
   return Response.json({
     jsonrpc: "2.0",
     id: message.id,
     result: {
-      tools: [
-        {
-          name: "list_watchlist",
-          description: "Read the owner's watchlist.",
+      tools: [...publicTools, ...personalTools].map((name) => ({
+          name,
+          description: "Read Anime List data.",
           inputSchema: { type: "object", properties: {} },
           annotations: { readOnlyHint: true, destructiveHint: false },
-        },
-      ],
+        })),
     },
   });
 }
@@ -110,16 +124,14 @@ test("hosted route registry is fixed and public Research Papers exposes only exp
     "/calorie/mcp",
     "/setline/mcp",
     "/anime-list/mcp",
+    "/anime-list-public/mcp",
     "/starboard/mcp",
     "/high-signal/mcp",
     "/significant-hobbies/mcp",
     "/research-papers/mcp",
-    "/posttrainllm/mcp",
     "/swe-interview-prep/mcp",
-    "/what-it-takes-to-win/mcp",
     "/saas-maker/mcp",
     "/drank/mcp",
-    "/looptv/mcp",
   ]);
   const papers = HOSTED_ROUTES["/research-papers/mcp"]!;
   assert.equal(papers.kind, "adapter");
@@ -296,6 +308,93 @@ test("Anime List proxy fixes the upstream URL and forwards the verified OAuth be
     redirect: "manual",
   }]);
   assert.equal(JSON.stringify(await json(response)).includes("oauth-chatgpt"), false);
+});
+
+test("public Anime List exposes only catalog tools and rejects personal calls before upstream", async () => {
+  const listed = await handleHostedRequest(
+    requestFor("/anime-list-public/mcp", { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }),
+    routeFetch,
+  );
+  assert.equal(listed.status, 200);
+  const listedPayload = await json(listed);
+  const tools = ((listedPayload.result as Record<string, unknown>).tools as Array<Record<string, unknown>>);
+  assert.deepEqual(tools.map(({ name }) => name), [
+    "search_anime", "search_manga", "get_anime_detail", "get_manga_detail",
+    "get_anime_stats", "get_random_anime",
+  ]);
+  assert.equal(tools.every((tool) => JSON.stringify(tool.securitySchemes) === JSON.stringify([{ type: "noauth" }])), true);
+
+  let forwarded = false;
+  const rejected = await handleHostedRequest(
+    requestFor("/anime-list-public/mcp", {
+      jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "list_watchlist", arguments: {} },
+    }),
+    async () => {
+      forwarded = true;
+      return Response.json({});
+    },
+  );
+  assert.equal(rejected.status, 200);
+  assert.equal(forwarded, false);
+  assert.equal(((await json(rejected)).result as Record<string, unknown>).isError, true);
+
+  const methodRejected = await handleHostedRequest(
+    requestFor("/anime-list-public/mcp", { jsonrpc: "2.0", id: 5, method: "resources/list", params: {} }),
+    async () => {
+      forwarded = true;
+      return Response.json({});
+    },
+  );
+  assert.equal(methodRejected.status, 200);
+  assert.equal(forwarded, false);
+  assert.equal((await json(methodRejected)).error instanceof Object, true);
+});
+
+test("public Anime List fails closed if its native catalog cannot be filtered", async () => {
+  const response = await handleHostedRequest(
+    requestFor("/anime-list-public/mcp", { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }),
+    async () => new Response("event: message\ndata: {}\n\n", {
+      headers: { "Content-Type": "text/event-stream" },
+    }),
+  );
+  assert.equal(response.status, 502);
+  assert.match(JSON.stringify(await json(response)), /cannot be safely filtered/u);
+});
+
+test("public Anime List forwards catalog calls anonymously and uses its own identity", async () => {
+  const calls: Array<{ authorization: string | null; method: string | undefined }> = [];
+  const initialized = await handleHostedRequest(
+    requestFor("/anime-list-public/mcp", initializeRequest()),
+    async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init);
+      calls.push({
+        authorization: request.headers.get("authorization"),
+        method: (await request.clone().json() as { method?: string }).method,
+      });
+      return nativeMcpResponse(request);
+    },
+  );
+  const initializedPayload = await json(initialized);
+  const serverInfo = ((initializedPayload.result as Record<string, unknown>).serverInfo as Record<string, unknown>);
+  assert.equal(serverInfo.name, "anime-list-public-by-significant-hobbies");
+
+  await handleHostedRequest(
+    requestFor("/anime-list-public/mcp", {
+      jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "search_anime", arguments: { pagesize: 1 } },
+    }),
+    async (input, init) => {
+      const request = input instanceof Request ? input : new Request(input, init);
+      calls.push({
+        authorization: request.headers.get("authorization"),
+        method: (await request.clone().json() as { method?: string }).method,
+      });
+      return nativeMcpResponse(request);
+    },
+  );
+  assert.deepEqual(calls, [
+    { authorization: null, method: "initialize" },
+    { authorization: null, method: "tools/call" },
+  ]);
 });
 
 test("branded hosts expose only their assigned plugin routes", async () => {

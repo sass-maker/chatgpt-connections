@@ -18,12 +18,9 @@ export type AppId =
   | "significant-hobbies"
   | "research-papers"
   | "setline"
-  | "posttrainllm"
   | "swe-interview-prep"
-  | "what-it-takes-to-win"
   | "saas-maker"
-  | "drank"
-  | "looptv";
+  | "drank";
 
 export interface ToolDefinition {
   title: string;
@@ -38,7 +35,6 @@ export interface ToolDefinition {
     values: Readonly<Record<string, string>>;
   };
   requireCollection?: boolean;
-  uniqueField?: string;
   detail?: boolean;
   localQuery?: boolean;
   detailCollectionKeys?: readonly string[];
@@ -110,6 +106,25 @@ function queryPath(path: string, values: Record<string, unknown>): string {
   }
   const query = params.toString();
   return query ? `${path}?${query}` : path;
+}
+
+function calorieHistoryPath(args: Record<string, unknown>): string {
+  const start = typeof args.start === "string" ? Date.parse(`${args.start}T00:00:00Z`) : Number.NaN;
+  const end = typeof args.end === "string" ? Date.parse(`${args.end}T00:00:00Z`) : Number.NaN;
+  const inclusiveDays = Math.round((end - start) / 86_400_000) + 1;
+  if (!Number.isFinite(inclusiveDays) || inclusiveDays < 1 || inclusiveDays > 366) {
+    throw new ConnectionError(
+      "invalid_input",
+      "Nutrition history must use a valid inclusive range of 366 days or fewer.",
+    );
+  }
+  return queryPath("/api/mcp/history", {
+    start: args.start,
+    end: args.end,
+    timezone: args.timezone,
+    limit: args.limit,
+    offset: args.offset,
+  });
 }
 
 function readLimit(args: Record<string, unknown>): number {
@@ -282,12 +297,6 @@ export function normalizeToolResult(options: {
           (value !== undefined && JSON.stringify(value).toLocaleLowerCase().includes(String(expected).toLocaleLowerCase()));
       }),
     );
-  }
-  if (tool.uniqueField) {
-    source = [...new Set(source.map((item) => objectValue(item, tool.uniqueField!))
-      .filter((value): value is string => typeof value === "string" && value.trim().length > 0))]
-      .sort((left, right) => left.localeCompare(right))
-      .map((value) => ({ id: value.toLocaleLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, ""), name: value }));
   }
 
   const upstreamPage = explicitPage(payload);
@@ -533,14 +542,7 @@ const calorie: AppDefinition = {
     },
     history: {
       auth: true,
-      path: (a) =>
-        queryPath("/api/mcp/history", {
-          start: a.start,
-          end: a.end,
-          timezone: a.timezone,
-          limit: a.limit,
-          offset: a.offset,
-        }),
+      path: calorieHistoryPath,
     },
     foods: {
       auth: true,
@@ -568,7 +570,8 @@ const calorie: AppDefinition = {
     },
     get_nutrition_history: {
       title: "Get nutrition history",
-      description: "Retrieve bounded owner nutrition history for an inclusive date range.",
+      description:
+        "Retrieve bounded owner nutrition history for an inclusive date range of at most 366 days. Follow nextOffset until null to enumerate the requested range.",
       inputSchema: {
         start: date,
         end: date,
@@ -894,59 +897,6 @@ const setline: AppDefinition = {
   },
 };
 
-const posttrainllm: AppDefinition = {
-  id: "posttrainllm",
-  name: "PostTrainLLM",
-  serverName: "posttrainllm-public-readonly",
-  baseUrl: "https://posttrainllm.com",
-  baseUrlEnv: "POSTTRAINLLM_API_URL",
-  instructions:
-    "Read-only published PostTrainLLM model and benchmark evidence. Never train, run, upload, publish, mutate, or access local factory state.",
-  operations: {
-    leaderboard: { path: () => "/data/leaderboard.json", mode: "public-static" },
-    gallery: { path: () => "/gallery/manifest.json", mode: "public-static" },
-  },
-  tools: {
-    search_published_models: {
-      title: "Search published models",
-      description: "Search the published PostTrainLLM leaderboard by text or benchmark evidence.",
-      inputSchema: {
-        q: optionalQuery,
-        benchmark: z.string().trim().max(100).optional(),
-        limit: commonLimitInput,
-        offset: commonOffsetInput,
-      },
-      operation: "leaderboard",
-      mode: "public-static",
-      collectionKeys: ["entries"],
-      requireCollection: true,
-      localQuery: true,
-      localFilters: { benchmark: ["scores"] },
-    },
-    get_published_model: {
-      title: "Get published model",
-      description: "Retrieve one published model by its stable gallery identifier.",
-      inputSchema: { id: stableId },
-      operation: "gallery",
-      mode: "public-static",
-      detail: true,
-      detailCollectionKeys: ["models"],
-      detailArgument: "id",
-      detailFields: ["id"],
-      requireCollection: true,
-    },
-    list_model_benchmarks: {
-      title: "List model benchmarks",
-      description: "List the published benchmark definitions used by the model leaderboard.",
-      inputSchema: { limit: commonLimitInput, offset: commonOffsetInput },
-      operation: "leaderboard",
-      mode: "public-static",
-      collectionKeys: ["benchmarks"],
-      requireCollection: true,
-    },
-  },
-};
-
 const curriculumKinds = {
   track: "tracks",
   concept: "concepts",
@@ -1044,59 +994,6 @@ const sweInterviewPrep: AppDefinition = {
   },
 };
 
-const whatItTakesToWin: AppDefinition = {
-  id: "what-it-takes-to-win",
-  name: "What It Takes to Win",
-  serverName: "what-it-takes-to-win-public-readonly",
-  baseUrl: "https://paths.significanthobbies.com",
-  baseUrlEnv: "WHAT_IT_TAKES_TO_WIN_API_URL",
-  instructions:
-    "Read-only access to the published What It Takes to Win research index. Never access unpublished research, source-audit artifacts, or arbitrary files.",
-  operations: {
-    index: { path: () => "/data/search-index.json", mode: "public-static" },
-  },
-  tools: {
-    search_people_and_milestones: {
-      title: "Search people and milestones",
-      description: "Search published people, outcome categories, and milestone summaries.",
-      inputSchema: {
-        q: optionalQuery,
-        category: z.string().trim().max(120).optional(),
-        limit: commonLimitInput,
-        offset: commonOffsetInput,
-      },
-      operation: "index",
-      mode: "public-static",
-      collectionKeys: ["items"],
-      requireCollection: true,
-      localQuery: true,
-      localFilters: { category: ["category"] },
-    },
-    get_person_research_record: {
-      title: "Get person research record",
-      description: "Retrieve one published research-index record by stable person identifier.",
-      inputSchema: { id: stableId },
-      operation: "index",
-      mode: "public-static",
-      detail: true,
-      detailCollectionKeys: ["items"],
-      detailArgument: "id",
-      detailFields: ["id"],
-      requireCollection: true,
-    },
-    list_research_categories: {
-      title: "List research categories",
-      description: "List distinct categories represented in the published research index.",
-      inputSchema: { limit: commonLimitInput, offset: commonOffsetInput },
-      operation: "index",
-      mode: "public-static",
-      collectionKeys: ["items"],
-      requireCollection: true,
-      uniqueField: "category",
-    },
-  },
-};
-
 const saasMaker: AppDefinition = {
   id: "saas-maker",
   name: "SaaS Maker",
@@ -1188,29 +1085,6 @@ const drank: AppDefinition = {
   },
 };
 
-const looptv: AppDefinition = {
-  id: "looptv",
-  name: "LoopTV",
-  serverName: "looptv-public-readonly",
-  baseUrl: "https://tv.significanthobbies.com",
-  baseUrlEnv: "LOOPTV_API_URL",
-  instructions:
-    "Read-only public LoopTV catalog status. Never control playback, mutate stations, query arbitrary YouTube data, or forward the oversized full video catalog.",
-  operations: {
-    summary: { path: () => "/catalog-summary.json", mode: "public-static" },
-  },
-  tools: {
-    get_catalog_summary: {
-      title: "Get catalog summary",
-      description: "Retrieve LoopTV catalog freshness, coverage, total size, and station counts.",
-      inputSchema: {},
-      operation: "summary",
-      mode: "public-static",
-      detail: true,
-    },
-  },
-};
-
 export const APP_DEFINITIONS: Record<AppId, AppDefinition> = {
   reader,
   starboard,
@@ -1219,10 +1093,7 @@ export const APP_DEFINITIONS: Record<AppId, AppDefinition> = {
   "significant-hobbies": significantHobbies,
   "research-papers": researchPapers,
   setline,
-  posttrainllm,
   "swe-interview-prep": sweInterviewPrep,
-  "what-it-takes-to-win": whatItTakesToWin,
   "saas-maker": saasMaker,
   drank,
-  looptv,
 };

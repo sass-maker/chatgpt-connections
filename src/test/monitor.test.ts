@@ -56,7 +56,7 @@ const productionFetch: typeof fetch = async (input, init) => {
   }
   const route = hostedRoute(url.pathname, url.hostname);
   if (!route) return responseJson({ error: "not_found" }, 404);
-  if (route.audience === "personal") {
+  if (route.audience === "personal" && !request.headers.has("authorization")) {
     const resourceMetadata = `${url.origin}${protectedPrefix}${url.pathname}`;
     return responseJson({ jsonrpc: "2.0", error: { code: -32000 }, id: null }, 401, true, {
       "WWW-Authenticate": `Bearer resource_metadata="${resourceMetadata}", scope="${route.scope}"`,
@@ -70,7 +70,7 @@ const productionFetch: typeof fetch = async (input, init) => {
       result: {
         protocolVersion,
         capabilities: { tools: {} },
-        serverInfo: { name: route.app.serverName, version: "0.1.0" },
+        serverInfo: { name: route.kind === "adapter" ? route.app.serverName : route.serverName, version: "0.1.0" },
       },
     });
   }
@@ -79,7 +79,7 @@ const productionFetch: typeof fetch = async (input, init) => {
       jsonrpc: "2.0",
       id: message.id,
       result: {
-        tools: Object.keys(route.app.tools).map((name) => ({
+        tools: (route.kind === "adapter" ? Object.keys(route.app.tools) : [...(route.allowedTools ?? [])]).map((name) => ({
           name,
           annotations: { readOnlyHint: true, destructiveHint: false },
           securitySchemes: [{ type: "noauth" }],
@@ -96,6 +96,24 @@ const productionFetch: typeof fetch = async (input, init) => {
       result: { isError: true, content: [{ type: "text", text: "tool not found" }] },
     });
   }
+  const toolArguments = params.arguments && typeof params.arguments === "object" &&
+      !Array.isArray(params.arguments)
+    ? params.arguments as Record<string, unknown>
+    : {};
+  const requestedLimit = typeof toolArguments.pagesize === "number"
+    ? toolArguments.pagesize
+    : typeof toolArguments.limit === "number"
+      ? toolArguments.limit
+      : 1;
+  const requestedOffset = typeof toolArguments.offset === "number" ? toolArguments.offset : 0;
+  const total = 10;
+  const items = Array.from(
+    { length: Math.max(0, Math.min(requestedLimit, total - requestedOffset)) },
+    (_, index) => ({ id: `${route.id}-${requestedOffset + index}` }),
+  );
+  const nextOffset = requestedOffset + items.length < total
+    ? requestedOffset + items.length
+    : null;
   return responseJson({
     jsonrpc: "2.0",
     id: message.id,
@@ -104,8 +122,10 @@ const productionFetch: typeof fetch = async (input, init) => {
         schemaVersion: "1",
         ok: true,
         tool: name,
-        items: [{ password: "must-never-enter-receipt" }],
-        truncated: false,
+        ...(route.id === "anime-list-public" || route.id === "anime-list"
+          ? { data: { filteredList: items, totalFiltered: total } }
+          : { items, total, nextOffset, hasMore: nextOffset !== null }),
+        truncated: nextOffset !== null,
       },
     },
   });
@@ -118,21 +138,40 @@ test("production monitor retains only redacted contract evidence", async () => {
     now: () => new Date("2026-08-12T00:00:00.000Z"),
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 75, failed: 0, total: 75 });
+  assert.deepEqual(receipt.summary, { passed: 70, failed: 0, total: 70 });
   assert.equal(receipt.checkedAt, "2026-08-12T00:00:00.000Z");
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("must-never-enter-receipt"), false);
   assert.equal(serialized.includes("password"), false);
-  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 10);
+  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 8);
+  assert.equal(receipt.checks.filter(({ id }) => id === "pagination").length, 7);
   assert.equal(receipt.checks.filter(({ id }) => id === "oauth-resource").length, 3);
-  assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 13);
+  assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 11);
 });
 
 test("production monitor excludes prepared routes until activation", async () => {
   const receipt = await runProductionMonitor({ fetchImpl: productionFetch });
-  assert.deepEqual(receipt.summary, { passed: 39, failed: 0, total: 39 });
+  assert.deepEqual(receipt.summary, { passed: 43, failed: 0, total: 43 });
   assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 4);
+  assert.equal(receipt.checks.filter(({ id }) => id === "pagination").length, 4);
   assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 7);
+});
+
+test("production monitor can verify private collection pagination without retaining bearers", async () => {
+  const receipt = await runProductionMonitor({
+    fetchImpl: productionFetch,
+    personalAuthorizations: {
+      reader: "Bearer reader-private-monitor-secret",
+      calorie: "Bearer calorie-private-monitor-secret",
+      "anime-list": "Bearer anime-private-monitor-secret",
+    },
+  });
+  assert.equal(receipt.ok, true);
+  assert.deepEqual(receipt.summary, { passed: 46, failed: 0, total: 46 });
+  assert.equal(receipt.checks.filter(({ id }) => id === "authenticated-pagination").length, 3);
+  const serialized = JSON.stringify(receipt);
+  assert.equal(serialized.includes("private-monitor-secret"), false);
+  assert.equal(serialized.includes("Bearer"), false);
 });
 
 test("production monitor reports stable failures without retaining response bodies", async () => {
@@ -181,4 +220,45 @@ test("production monitor requires exact public tool-catalog parity", async () =>
   const receipt = await runProductionMonitor({ fetchImpl });
   const failure = receipt.checks.find(({ plugin, id }) => plugin === "starboard" && id === "tools-readonly");
   assert.equal(failure?.errorCode, "tool_catalog_parity_invalid");
+});
+
+test("production monitor rejects pagination totals that change between pages", async () => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    const url = new URL(request.url);
+    if (url.hostname === HOSTED_ROUTES["/significant-hobbies/mcp"]!.hosts[0] && request.method === "POST") {
+      const message = await request.clone().json() as {
+        id: number;
+        method: string;
+        params?: { name?: string; arguments?: { limit?: number; offset?: number } };
+      };
+      if (message.method === "tools/call" && message.params?.name === "search_public_timelines") {
+        const offset = message.params.arguments?.offset ?? 0;
+        const limit = message.params.arguments?.limit ?? 2;
+        const total = offset === 0 ? 10 : 10 + offset;
+        return responseJson({
+          jsonrpc: "2.0",
+          id: message.id,
+          result: {
+            structuredContent: {
+              schemaVersion: "1",
+              ok: true,
+              tool: "search_public_timelines",
+              items: Array.from({ length: limit }, (_, index) => ({ id: `timeline-${offset + index}` })),
+              total,
+              nextOffset: offset + limit < total ? offset + limit : null,
+              hasMore: offset + limit < total,
+              truncated: offset + limit < total,
+            },
+          },
+        });
+      }
+    }
+    return productionFetch(request);
+  };
+  const receipt = await runProductionMonitor({ fetchImpl });
+  const failure = receipt.checks.find(
+    ({ plugin, id }) => plugin === "significant-hobbies" && id === "pagination",
+  );
+  assert.equal(failure?.errorCode, "pagination_total_unstable");
 });

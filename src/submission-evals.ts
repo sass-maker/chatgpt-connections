@@ -9,6 +9,7 @@ const MAX_RESPONSE_BYTES = 1_000_000;
 type ResultShape = "empty-page" | "item" | "page";
 
 interface Dependency {
+  argument?: string;
   arguments: Record<string, unknown>;
   fields: readonly string[];
   tool: string;
@@ -33,6 +34,26 @@ interface PublicEvaluationDefinition {
 }
 
 const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> = Object.freeze({
+  "anime-list-public": {
+    positive: [
+      { tool: "search_anime", arguments: { pagesize: 1, offset: 0 }, shape: "page" },
+      { tool: "search_manga", arguments: { pagesize: 1, offset: 0 }, shape: "page" },
+      { tool: "get_anime_stats", arguments: {}, shape: "item" },
+      { tool: "get_random_anime", arguments: { limit: 1 }, shape: "page" },
+      {
+        tool: "get_anime_detail",
+        arguments: {},
+        dependency: {
+          argument: "mal_id",
+          tool: "search_anime",
+          arguments: { pagesize: 1, offset: 0 },
+          fields: ["mal_id", "id"],
+        },
+        shape: "item",
+      },
+    ],
+    negativeTools: ["list_watchlist", "list_manga_watchlist", "get_watchlist_enriched"],
+  },
   starboard: {
     positive: [
       { tool: "search_repositories", arguments: { q: "MCP", language: "TypeScript", limit: 1, offset: 0 }, shape: "page" },
@@ -104,16 +125,6 @@ const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> =
     ],
     negativeTools: ["search_private_corpus", "download_pdf", "ingest_paper"],
   },
-  posttrainllm: {
-    positive: [
-      { tool: "search_published_models", arguments: { q: "TinyStories", limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_published_models", arguments: { limit: 1, offset: 0 }, shape: "page" },
-      { tool: "get_published_model", arguments: { id: "tinystories" }, shape: "item" },
-      { tool: "list_model_benchmarks", arguments: { limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_published_models", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
-    ],
-    negativeTools: ["train_model", "upload_checkpoint", "publish_model"],
-  },
   "swe-interview-prep": {
     positive: [
       { tool: "search_curriculum", arguments: { q: "systems", limit: 1, offset: 0 }, shape: "page" },
@@ -123,16 +134,6 @@ const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> =
       { tool: "search_curriculum", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
     ],
     negativeTools: ["update_progress", "save_notes", "run_interview_code"],
-  },
-  "what-it-takes-to-win": {
-    positive: [
-      { tool: "search_people_and_milestones", arguments: { q: "Microsoft", limit: 1, offset: 0 }, shape: "page" },
-      { tool: "get_person_research_record", arguments: { id: "bill-gates" }, shape: "item" },
-      { tool: "list_research_categories", arguments: { limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_people_and_milestones", arguments: { category: "Founder/Entrepreneur", limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_people_and_milestones", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
-    ],
-    negativeTools: ["read_unpublished_research", "edit_person_record", "download_source_archive"],
   },
   "saas-maker": {
     positive: [
@@ -153,16 +154,6 @@ const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> =
       { tool: "get_domain_rating", arguments: { domain: "significanthobbies.com" }, shape: "item" },
     ],
     negativeTools: ["get_ahrefs_api_key", "save_domain_history", "query_private_domain"],
-  },
-  looptv: {
-    positive: [
-      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
-      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
-      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
-      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
-      { tool: "get_catalog_summary", arguments: {}, shape: "item" },
-    ],
-    negativeTools: ["control_playback", "edit_station", "download_full_catalog"],
   },
 });
 
@@ -299,7 +290,7 @@ function firstDependencyValue(
   content: Record<string, unknown>,
   fields: readonly string[],
 ): { field: string; value: number | string } {
-  const items = Array.isArray(content.items) ? content.items : [];
+  const items = contentItems(content);
   const first = items[0];
   const item = first && typeof first === "object" && !Array.isArray(first)
     ? first as Record<string, unknown>
@@ -313,6 +304,25 @@ function firstDependencyValue(
   throw new EvaluationError("dependency_fixture_missing");
 }
 
+function contentItems(content: Record<string, unknown>): unknown[] {
+  if (Array.isArray(content.items)) return content.items;
+  if (Array.isArray(content.data)) return content.data;
+  if (!content.data || typeof content.data !== "object" || Array.isArray(content.data)) return [];
+  const data = content.data as Record<string, unknown>;
+  for (const key of ["items", "filteredList", "results"] as const) {
+    if (Array.isArray(data[key])) return data[key];
+  }
+  return [];
+}
+
+function contentItemCount(content: Record<string, unknown>, shape: ResultShape): number {
+  const items = contentItems(content);
+  if (items.length > 0) return items.length;
+  if (content.item && typeof content.item === "object" && !Array.isArray(content.item)) return 1;
+  if (shape === "item" && content.data && typeof content.data === "object" && !Array.isArray(content.data)) return 1;
+  return 0;
+}
+
 function validatePositiveContent(
   content: Record<string, unknown>,
   evaluation: PositiveEvaluation,
@@ -320,7 +330,7 @@ function validatePositiveContent(
   if (content.schemaVersion !== "1" || content.ok !== true || content.tool !== evaluation.tool) {
     throw new EvaluationError("positive_contract_invalid");
   }
-  const itemCount = Array.isArray(content.items) ? content.items.length : content.item ? 1 : 0;
+  const itemCount = contentItemCount(content, evaluation.shape);
   if (evaluation.shape === "item" && itemCount !== 1) throw new EvaluationError("positive_item_missing");
   if (evaluation.shape === "page" && itemCount === 0) throw new EvaluationError("positive_page_empty");
   if (evaluation.shape === "empty-page" && itemCount !== 0) throw new EvaluationError("positive_empty_page_invalid");
@@ -344,7 +354,7 @@ async function runPositive(
     );
     if (dependency.isError) throw new EvaluationError("dependency_call_failed");
     const { field, value } = firstDependencyValue(dependency.content, evaluation.dependency.fields);
-    argumentsValue[field] = value;
+    argumentsValue[evaluation.dependency.argument ?? field] = value;
   }
   const result = await mcpCall(fetchImpl, listing.mcpUrl, id, evaluation.tool, argumentsValue);
   if (result.isError) throw new EvaluationError("positive_tool_failed");
@@ -397,7 +407,7 @@ export async function runPublicSubmissionEvaluations(
     const route = hostedRoute(url.pathname, url.hostname);
     return options.includePrepared || route?.productionStatus !== "prepared";
   });
-  const expectedListingCount = options.includePrepared ? 10 : 4;
+  const expectedListingCount = options.includePrepared ? 8 : 4;
   if (listings.length !== expectedListingCount) throw new EvaluationError("public_listing_count_invalid");
   const nested = await Promise.all(listings.map(async (listing, pluginIndex) => {
     const definition = PUBLIC_EVALUATIONS[listing.id];

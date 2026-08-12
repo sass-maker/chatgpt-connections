@@ -20,16 +20,14 @@ export type OpenAIChallengeSecret =
   | "OPENAI_CHALLENGE_READER"
   | "OPENAI_CHALLENGE_CALORIE"
   | "OPENAI_CHALLENGE_ANIME_LIST"
+  | "OPENAI_CHALLENGE_ANIME_LIST_PUBLIC"
   | "OPENAI_CHALLENGE_STARBOARD"
   | "OPENAI_CHALLENGE_HIGH_SIGNAL"
   | "OPENAI_CHALLENGE_SIGNIFICANT_HOBBIES"
   | "OPENAI_CHALLENGE_RESEARCH_PAPERS"
-  | "OPENAI_CHALLENGE_POSTTRAINLLM"
   | "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP"
-  | "OPENAI_CHALLENGE_WHAT_IT_TAKES_TO_WIN"
   | "OPENAI_CHALLENGE_SAAS_MAKER"
-  | "OPENAI_CHALLENGE_DRANK"
-  | "OPENAI_CHALLENGE_LOOPTV";
+  | "OPENAI_CHALLENGE_DRANK";
 
 export interface AdapterHostedRouteDefinition extends HostedRouteBase {
   kind: "adapter";
@@ -38,11 +36,9 @@ export interface AdapterHostedRouteDefinition extends HostedRouteBase {
 
 export interface NativeHostedRouteDefinition extends HostedRouteBase {
   kind: "native";
-  audience: "personal";
-  authMode: "federated";
-  scope: string;
   serverName: string;
   upstreamUrl: string;
+  allowedTools?: readonly string[];
 }
 
 export type HostedRouteDefinition =
@@ -138,6 +134,24 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     serverName: "anime-list-by-significant-hobbies",
     upstreamUrl: "https://anime.significanthobbies.com/api/mcp",
   },
+  "/anime-list-public/mcp": {
+    id: "anime-list-public",
+    kind: "native",
+    audience: "public",
+    hosts: ["catalog-anime-mcp.significanthobbies.com"],
+    challengeSecret: "OPENAI_CHALLENGE_ANIME_LIST_PUBLIC",
+    productionStatus: "prepared",
+    serverName: "anime-list-public-by-significant-hobbies",
+    upstreamUrl: "https://anime.significanthobbies.com/api/mcp",
+    allowedTools: [
+      "search_anime",
+      "search_manga",
+      "get_anime_detail",
+      "get_manga_detail",
+      "get_anime_stats",
+      "get_random_anime",
+    ],
+  },
   "/starboard/mcp": {
     id: "starboard",
     kind: "adapter",
@@ -170,15 +184,6 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     challengeSecret: "OPENAI_CHALLENGE_RESEARCH_PAPERS",
     app: hostedResearchPapers,
   },
-  "/posttrainllm/mcp": {
-    id: "posttrainllm",
-    kind: "adapter",
-    audience: "public",
-    hosts: ["mcp.posttrainllm.com"],
-    challengeSecret: "OPENAI_CHALLENGE_POSTTRAINLLM",
-    productionStatus: "prepared",
-    app: APP_DEFINITIONS.posttrainllm,
-  },
   "/swe-interview-prep/mcp": {
     id: "swe-interview-prep",
     kind: "adapter",
@@ -187,15 +192,6 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     challengeSecret: "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP",
     productionStatus: "prepared",
     app: APP_DEFINITIONS["swe-interview-prep"],
-  },
-  "/what-it-takes-to-win/mcp": {
-    id: "what-it-takes-to-win",
-    kind: "adapter",
-    audience: "public",
-    hosts: ["paths-mcp.significanthobbies.com"],
-    challengeSecret: "OPENAI_CHALLENGE_WHAT_IT_TAKES_TO_WIN",
-    productionStatus: "prepared",
-    app: APP_DEFINITIONS["what-it-takes-to-win"],
   },
   "/saas-maker/mcp": {
     id: "saas-maker",
@@ -214,15 +210,6 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     challengeSecret: "OPENAI_CHALLENGE_DRANK",
     productionStatus: "prepared",
     app: APP_DEFINITIONS.drank,
-  },
-  "/looptv/mcp": {
-    id: "looptv",
-    kind: "adapter",
-    audience: "public",
-    hosts: ["tv-mcp.significanthobbies.com"],
-    challengeSecret: "OPENAI_CHALLENGE_LOOPTV",
-    productionStatus: "prepared",
-    app: APP_DEFINITIONS.looptv,
   },
 });
 

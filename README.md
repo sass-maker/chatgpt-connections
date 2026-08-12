@@ -31,20 +31,18 @@ independent domain challenge per submission.
 | --- | --- | --- | --- |
 | Reader | `https://reader-mcp.significanthobbies.com/reader/mcp` | OAuth, `reader.read` | Reader verifies the caller token and resolves its Auth0 subject to that user's account |
 | Calorie | `https://calorie-mcp.significanthobbies.com/calorie/mcp` | OAuth, `calorie.read` | Calorie verifies the caller token and resolves its Auth0 subject to that user's account |
-| Anime List | `https://anime-mcp.significanthobbies.com/anime-list/mcp` | OAuth, `anime-list.read` | Fixed proxy to the native MCP; Anime List verifies and resolves the caller token |
+| My Anime List | `https://anime-mcp.significanthobbies.com/anime-list/mcp` | OAuth, `anime-list.read` | Full native read catalog plus user-scoped watchlists |
+| Anime List | `https://catalog-anime-mcp.significanthobbies.com/anime-list-public/mcp` | None | Prepared anonymous proxy exposing only six public catalog/discovery tools |
 | Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs |
 | High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | Published signal, brief, and track-record data |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
-| PostTrainLLM | `https://mcp.posttrainllm.com/posttrainllm/mcp` | None | Published model leaderboard, gallery, and benchmark definitions |
 | SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | None | Published curriculum and system-design catalogs |
-| What It Takes to Win | `https://paths-mcp.significanthobbies.com/what-it-takes-to-win/mcp` | None | Bounded published research search index |
 | SaaS Maker | `https://mcp.sassmaker.com/saas-maker/mcp` | None | Privacy-checked public `/api/ai` portfolio projection |
 | Drank | `https://domains-mcp.sassmaker.com/drank/mcp` | None | Live rating for one validated public hostname |
-| LoopTV | `https://tv-mcp.significanthobbies.com/looptv/mcp` | None | Compact public catalog freshness and station summary |
 
 Setline remains available only on the compatibility endpoint and is not one of
-the thirteen listing packages. It retains the existing owner-only token bridge
+the eleven listing packages. It retains the existing owner-only token bridge
 until its separate account boundary is ready.
 
 Research Papers' local corpus search, detail, similarity, RAG, PDFs, and ingest
@@ -107,17 +105,15 @@ and every other hosted product must not be added to Codex.
 | Reader | Federated account API and tests live | Branded gateway route live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
 | Calorie | Federated account API and tests live | Branded gateway route live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
 | Setline | API projection ready | Live Worker route; OAuth metadata verified | Auth0 API/grant ready; owner account/token pending, route fails closed | ChatGPT app deferred |
-| Anime List | Federated native MCP and tests live | Branded token-forwarding proxy live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
+| My Anime List | Federated native MCP and tests live | Branded token-forwarding proxy live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
+| Anime List | Public native catalog live | Six-tool anonymous proxy implemented; not deployed | No auth | Activation pending |
 | Starboard | Public API live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | High Signal | Public surface live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Research Papers | Public exports live | Export-only branded route live | No auth | OpenAI portal draft/submission pending |
-| PostTrainLLM | Public leaderboard and gallery live | Gateway route implemented; not deployed | No auth | Activation pending |
 | SWE Interview Prep | Public catalogs live | Gateway route implemented; not deployed | No auth | Activation pending |
-| What It Takes to Win | Public bounded index live | Gateway route implemented; not deployed | No auth | Activation pending |
 | SaaS Maker | Public agent projection live | Gateway route implemented; not deployed | No auth | Activation pending |
 | Drank | Public validated lookup live | Gateway route implemented; not deployed | No auth | Activation pending |
-| LoopTV | Public compact summary live | Gateway route implemented; not deployed | No auth | Activation pending |
 
 No OAuth KV is required. The existing workers.dev gateway remains active. The
 three federated product releases and seven branded custom domains are live from
@@ -126,9 +122,11 @@ representative public live calls pass. OpenAI portal drafts, per-draft domain
 challenge secrets, reviewer-account fixtures, retained ChatGPT evaluations,
 review, and publication remain; Setline is not part of this publication.
 
-The six expansion routes are implemented but intentionally not deployed by
-this change. Their domains, production monitoring claims, OpenAI drafts, and
-challenge secrets remain activation work. The full eligibility review is in
+The four prepared routes—public Anime List, SWE Interview Prep, SaaS Maker, and
+Drank—are intentionally not deployed by this change. Their domains, production
+monitoring claims, OpenAI drafts, and challenge secrets remain activation work.
+LoopTV, PostTrainLLM, and What It Takes to Win are explicitly **not needed for
+now** and are outside the release surface. The full eligibility review is in
 [`docs/non-ios-eligibility.md`](docs/non-ios-eligibility.md).
 
 ## Development and verification
@@ -186,13 +184,21 @@ Generated binding types come from `wrangler types`; rerun
 ## Production monitoring
 
 `pnpm monitor:production` runs the credential-free production contract suite.
-Once the expansion is activated, it verifies all thirteen health and
+Once the prepared routes are activated, it verifies all eleven health and
 hostname-isolation boundaries; public MCP
 initialization, read-only tool catalogs, representative bounded reads, and
-mutation rejection; plus private OAuth challenges and metadata. The JSON
+mutation rejection. Collection tools additionally verify non-overlapping
+first, middle, and terminal pages with one stable exact total and valid
+continuation state. Private routes verify OAuth challenges and metadata. The JSON
 receipt retains only status codes, protocol/schema fields, server/tool names,
 item counts, scopes, resource identifiers, and timestamps. It never retains
 bearers or source record bodies.
+
+Manual authenticated acceptance can pass short-lived bearer headers through
+`runProductionMonitor({ personalAuthorizations })`. When supplied, Reader,
+Calorie, and Anime List each receive the same three-page pagination check; the
+headers and source records are never copied into the receipt. Scheduled CI
+remains credential-free.
 
 GitHub Actions runs the same suite daily at 03:17 UTC and on manual dispatch.
 The redacted receipt is retained for 30 days even when a check fails:
@@ -213,11 +219,11 @@ records, upstream failures, or credentials.
 pnpm eval:submission:public -- --output public-submission-evals.json
 ```
 
-With all ten anonymous listings active, this protocol suite proves 80 public
+With all eight anonymous listings active, this protocol suite proves 64 public
 server cases. It deliberately reports
 `private_authenticated_evaluations` and `chatgpt_model_behavior` as manual
 gates: the three OAuth plugins still require owner and non-owner browser sign-in,
-and all thirteen prompt-level packages must still be exercised in ChatGPT before
+and all eleven prompt-level packages must still be exercised in ChatGPT before
 submission.
 
 ## Activation and revocation

@@ -11,17 +11,15 @@ appropriate for the intended audience. Marketing pages alone do not qualify.
 |---|---|---|---|
 | Reader | Personal | Federated owner API with `reader.read` | Hosted and user-scoped |
 | Calorie | Personal | Federated owner API with `calorie.read` | Hosted and user-scoped; medication and weight history excluded |
-| Anime List | Personal + public catalog | Native MCP with `anime-list.read` | Hosted and user-scoped for watchlists |
+| My Anime List | Personal | Native MCP with `anime-list.read` | Hosted and user-scoped for watchlists |
+| Anime List | Public | Anonymous native catalog MCP | Prepared with six catalog/discovery tools; no personal data |
 | Starboard | Public | Anonymous public catalog APIs | Hosted; private repositories and owner state excluded |
 | High Signal | Public | Published signal, brief, and hit-rate files | Hosted |
 | Significant Hobbies | Public | Public taxonomy, experiences, and PUBLIC timelines | Hosted |
 | Research Papers | Public | Approved public exports | Hosted; PDFs, ingest, and private corpus excluded |
-| PostTrainLLM | Public | `/data/leaderboard.json` and `/gallery/manifest.json` | Added; published models and benchmarks only |
 | SWE Interview Prep | Public | Curriculum and system-design catalog JSON | Added; personal progress and notes excluded |
-| What It Takes to Win | Public | Bounded `/data/search-index.json` | Added; the roughly 14 MB full people dataset is not fetched |
 | SaaS Maker | Public | Privacy-checked `/api/ai` projection | Added; internal Fleet registry and operations excluded |
 | Drank | Public | Validated `/api/dr?target=` lookup | Added; provider credential stays in the product Worker |
-| LoopTV | Public | Compact `/catalog-summary.json` | Added; the roughly 1.9 MB full catalog is not fetched |
 
 CodeVetter remains a local Codex-only MCP. It does not belong in the hosted
 ChatGPT gateway because its useful data and repository context are local to the
@@ -45,6 +43,9 @@ desktop application.
 
 | Product | Reason |
 |---|---|
+| LoopTV | **Not needed for now**: catalog freshness and station counts are technically queryable but not compelling enough as a ChatGPT product |
+| PostTrainLLM | **Not needed for now**: the published model/benchmark set is currently too small and niche to justify a connection |
+| What It Takes to Win | **Not needed for now**: the current bounded index is less valuable than a deeper comparative research experience |
 | Free AI | Its primary capability is generation, a mutating/compute operation rather than a read data source |
 | India Standards | The meaningful surface is a POST calculation protected by Turnstile, not an existing stable GET read boundary |
 | Chess | The current public product does not expose a sufficiently useful stable read dataset beyond the web experience |

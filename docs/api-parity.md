@@ -20,17 +20,15 @@ other capabilities outside the read-only publication boundary.
 | --- | ---: | --- |
 | Reader | 3 | Gateway/product tests pass; authenticated live discovery awaits the OpenAI reviewer flow |
 | Calorie | 4 | Gateway/product tests pass; authenticated live discovery awaits the OpenAI reviewer flow |
-| Anime List | 10 | Native production discovery returns the exact ten-tool catalog; authenticated branded discovery awaits the reviewer flow |
+| My Anime List | 10 | Native production discovery returns the exact ten-tool catalog; authenticated branded discovery awaits the reviewer flow |
+| Anime List | 6 | Gateway tests enforce the exact anonymous native allowlist; activation pending |
 | Starboard | 4 | Daily production monitor enforces exact live catalog equality |
 | High Signal | 4 | Daily production monitor enforces exact live catalog equality |
 | Significant Hobbies | 5 | Daily production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Daily production monitor enforces exact live catalog equality |
-| PostTrainLLM | 3 | Gateway tests enforce exact catalog equality; production activation pending |
 | SWE Interview Prep | 5 | Gateway tests enforce exact catalog equality; production activation pending |
-| What It Takes to Win | 3 | Gateway tests enforce exact catalog equality; production activation pending |
 | SaaS Maker | 4 | Gateway tests enforce exact catalog equality; production activation pending |
 | Drank | 1 | Gateway tests enforce exact catalog equality; production activation pending |
-| LoopTV | 1 | Gateway tests enforce exact catalog equality; production activation pending |
 
 The private expected catalogs are:
 
@@ -38,9 +36,13 @@ The private expected catalogs are:
   `list_reader_collections`.
 - Calorie: `get_daily_nutrition`, `get_nutrition_history`,
   `search_saved_foods`, `list_goal_cycles`.
-- Anime List: `search_anime`, `search_manga`, `get_anime_detail`,
+- My Anime List: `search_anime`, `search_manga`, `get_anime_detail`,
   `get_manga_detail`, `get_anime_stats`, `get_random_anime`, `list_watchlist`,
   `list_manga_watchlist`, `list_watchlist_tags`, `get_watchlist_enriched`.
+
+The public Anime List catalog is exactly `search_anime`, `search_manga`,
+`get_anime_detail`, `get_manga_detail`, `get_anime_stats`, and
+`get_random_anime`. Watchlist calls are rejected before upstream forwarding.
 
 Private catalog parity is not considered production-proven until the same
 exact lists are observed through each branded endpoint using its dedicated
@@ -63,18 +65,12 @@ The following surfaces remain unavailable by design:
   administrative state.
 - Research Papers full-corpus search, similarity, paid RAG, PDFs, ingest,
   enrichment, databases, and operator controls.
-- PostTrainLLM training, inference, uploads, checkpoints, publication, and local
-  factory state.
 - SWE Interview Prep progress, notes, reviews, chats, accounts, and code
   execution.
-- What It Takes to Win unpublished research, source archives, editing, and its
-  oversized full dataset.
 - SaaS Maker internal registry, operations, deployments, credentials, and
   owner-only data.
 - Drank provider credentials, private targets, history, and arbitrary provider
   operations.
-- LoopTV playback, station changes, arbitrary YouTube operations, and the
-  oversized full catalog.
 
 Adding any excluded API is a privacy/product-scope change requiring a new
 review; it is not a parity bug.

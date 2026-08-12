@@ -8,15 +8,13 @@ This is the review map for every upstream operation. Anything absent is unavaila
 | Starboard | `GET /api/discover`, `/api/repos/:id?catalogOnly=1`, `/api/project-preview`, `/api/tools` | private GitHub data, saved projects, recommendations that require owner context, discussions/jobs/admin |
 | High Signal | `GET /signals.json`, `/brief/daily`, `/data/hit-rate.json` | watchlists, review/delivery/admin/ingest/refresh/provider operations |
 | Calorie | `GET /api/mcp/daily`, `/history`, `/foods`, `/cycles` | all `/api/app` mutations; medication and weight tables/fields |
-| Anime List | Native fixed catalog/detail/stats/random and owner-watchlist operations inside `/api/mcp` | every nonregistered route; browser cookie/JWT auth; watchlist mutations |
+| My Anime List | Native fixed catalog/detail/stats/random and owner-watchlist operations inside `/api/mcp` | every nonregistered route; browser cookie/JWT auth; watchlist mutations |
+| Anime List | Anonymous native `/api/mcp` proxy allowlisted to six catalog/detail/stats/random tools | watchlists, tags, account records, credentials, mutations |
 | Significant Hobbies | `GET /api/mcp/hobbies`, `/experiences`, `/experiences/:slug`, `/timelines`, `/timelines/:id` | every private feature and any timeline not exactly `PUBLIC` |
 | Research Papers | Local `GET /search`, `/papers/:id`, `/similar/:id`, `/hot`, `/sleepers`; public `/paths.json`; fallback `/data/hot.json`, `/data/sleepers.json` | `/rag/query`, PDF delivery, ClickHouse/SQL, ingest, enrichment, jobs, operator routes |
 | Setline | `GET /api/mcp/programme`, `/templates`, `/history`, `/history/:id`, `/progress` | `/api/app/state`, execution, programme changes, recommendations/actions, sync, import, account routes |
-| PostTrainLLM | `GET /data/leaderboard.json`, `/gallery/manifest.json` | training, inference, uploads, checkpoints, publication, local state |
 | SWE Interview Prep | `GET /curriculum/catalog.json`, `/system-design/catalog.json` | progress, notes, reviews, chats, accounts, code execution |
-| What It Takes to Win | `GET /data/search-index.json` | full people JSON, unpublished notes, source archives, editing |
 | SaaS Maker | `GET /api/ai` | private Fleet registry, operations, deployments, credentials, owner data |
 | Drank | `GET /api/dr?target=<validated-public-hostname>` | provider credentials, private targets, persistence, arbitrary provider calls |
-| LoopTV | `GET /catalog-summary.json` | full catalog, playback, station changes, arbitrary YouTube calls |
 
 The shared runtime enforces GET, relative fixed paths, configured origins, a 10-second default timeout, at most one retry, a one-megabyte upstream bound, structured output bounds, credential-key redaction, and per-app credentials that are never accepted as tool input.

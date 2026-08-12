@@ -246,6 +246,7 @@ function validUpstreamToken(route: HostedRouteDefinition, value: string | undefi
     return value.length <= MAX_FEDERATED_TOKEN_BYTES &&
       /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(value);
   }
+  if (route.kind !== "adapter") return false;
   if (value.length > MAX_PRODUCT_TOKEN_BYTES) return false;
   return !route.app.tokenPrefix || value.startsWith(route.app.tokenPrefix);
 }
@@ -273,15 +274,42 @@ async function handleNative(
   request: Request,
   route: Extract<HostedRouteDefinition, { kind: "native" }>,
   fetchImpl: typeof fetch,
-  token: string,
+  token?: string,
 ): Promise<Response> {
   const safeRequest = await boundedRequest(request);
   const body = await safeRequest.arrayBuffer();
+  let message: { id?: number | string; method?: string; params?: { name?: string } };
+  try {
+    message = JSON.parse(new TextDecoder().decode(body)) as typeof message;
+  } catch {
+    return jsonRpcError(400, -32700, "Invalid JSON-RPC payload.");
+  }
+  const allowlist = route.allowedTools ? new Set(route.allowedTools) : undefined;
+  const allowedPublicNativeMethods = new Set([
+    "initialize",
+    "notifications/initialized",
+    "ping",
+    "tools/list",
+    "tools/call",
+  ]);
+  if (allowlist && !allowedPublicNativeMethods.has(message.method ?? "")) {
+    return jsonRpcError(200, -32601, "Method is not available on this connection.");
+  }
+  if (allowlist && message.method === "tools/call" && !allowlist.has(message.params?.name ?? "")) {
+    return Response.json({
+      jsonrpc: "2.0",
+      id: message.id ?? null,
+      result: {
+        isError: true,
+        content: [{ type: "text", text: "Tool is not available on this connection." }],
+      },
+    });
+  }
   const headers = new Headers({
     Accept: "application/json, text/event-stream",
-    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   });
+  if (token) headers.set("Authorization", `Bearer ${token}`);
   for (const name of ["Mcp-Protocol-Version", "Mcp-Session-Id", "Last-Event-ID"]) {
     const value = request.headers.get(name);
     if (value && value.length <= 256) headers.set(name, value);
@@ -297,7 +325,35 @@ async function handleNative(
     await response.body?.cancel();
     return jsonRpcError(502, -32603, "Upstream MCP redirects are not allowed.");
   }
-  return advertiseSecuritySchemes(await boundedResponse(response), route);
+  let bounded = await boundedResponse(response);
+  const responseIsJson = bounded.headers.get("content-type")?.toLowerCase().includes("application/json") === true;
+  if (allowlist && !responseIsJson) {
+    await bounded.body?.cancel();
+    return jsonRpcError(502, -32603, "Upstream MCP response cannot be safely filtered.");
+  }
+  if (responseIsJson) {
+    const payload = await bounded.clone().json() as Record<string, unknown>;
+    const result = payload.result && typeof payload.result === "object" && !Array.isArray(payload.result)
+      ? payload.result as Record<string, unknown>
+      : undefined;
+    if (result && message.method === "initialize") {
+      const serverInfo = result.serverInfo && typeof result.serverInfo === "object" && !Array.isArray(result.serverInfo)
+        ? result.serverInfo as Record<string, unknown>
+        : {};
+      serverInfo.name = route.serverName;
+      result.serverInfo = serverInfo;
+    }
+    if (result && allowlist && message.method === "tools/list" && Array.isArray(result.tools)) {
+      result.tools = result.tools.filter((tool) =>
+        tool && typeof tool === "object" && !Array.isArray(tool) &&
+        allowlist.has(String((tool as Record<string, unknown>).name ?? ""))
+      );
+    }
+    const responseHeaders = new Headers(bounded.headers);
+    responseHeaders.delete("Content-Length");
+    bounded = Response.json(payload, { status: bounded.status, headers: responseHeaders });
+  }
+  return advertiseSecuritySchemes(bounded, route);
 }
 
 export async function handleHostedRequest(
@@ -346,7 +402,7 @@ export async function handleHostedRequest(
   try {
     const token = route.audience === "personal" ? authorization!.upstreamToken! : undefined;
     const response = route.kind === "native"
-      ? await handleNative(request, route, fetchImpl, token!)
+      ? await handleNative(request, route, fetchImpl, token)
       : await handleAdapter(request, route, fetchImpl, token);
     return withProtocolHeaders(response, request, route);
   } catch (error) {

@@ -1,6 +1,6 @@
 # OpenAI plugin listing packages
 
-`plugins.json` is the source-of-truth worksheet for the thirteen MCP-only
+`plugins.json` is the source-of-truth worksheet for the eleven MCP-only
 plugin submissions. It contains the portal copy, branded endpoint, existing
 product logo, starter prompts, five positive tests, three negative tests, legal
 URLs, support URL, availability, release notes, and the per-host challenge
@@ -16,9 +16,11 @@ Each plugin has a unique hostname because OpenAI requires one exact plaintext
 token at `/.well-known/openai-apps-challenge` for each MCP submission. The
 gateway returns 404 until the matching `OPENAI_CHALLENGE_*` binding exists.
 
-The first seven entries describe the live initial release. The six expansion
-entries are code-complete listing packages but must not be represented as live
-until their branded routes are deployed and verified.
+Seven entries describe the live initial release. Public Anime List, SWE
+Interview Prep, SaaS Maker, and Drank are code-complete listing packages but
+must not be represented as live until their branded routes are deployed and
+verified. LoopTV, PostTrainLLM, and What It Takes to Win are **not needed for
+now** and intentionally have no listing package.
 
 Setline and local CodeVetter are intentionally absent. Setline remains deferred;
 CodeVetter's local repository MCP stays Codex-only. See
