@@ -1,6 +1,7 @@
-# Fleet MCP connections
+# ChatGPT Connections
 
-Fleet routes read-only data according to its existing storage boundary:
+ChatGPT Connections is the standalone read-only MCP gateway for selected
+products. It routes data according to each product's existing storage boundary:
 
 - CodeVetter stays local and is available only to Codex through its installed
   repository-scoped STDIO sidecar.
@@ -166,9 +167,9 @@ revocation. Those remain manual or live-token activation evidence; a passing
 metadata receipt is not full OAuth acceptance.
 
 Production deployment is intentionally available only as `pnpm run deploy`. That
-command requires a clean, synced `main`, a successful path-scoped
-`chatgpt-connections-ci.yml` run covering the current component state, and an
-exact 40-character Git SHA tag on the uploaded Worker version.
+command requires a clean, synced `main`, a successful `ci.yml` run at the exact
+current revision, and an exact 40-character Git SHA tag on the uploaded Worker
+version.
 
 STDIO entrypoints remain for source diagnostics and rollback, but are not
 registered in Codex:

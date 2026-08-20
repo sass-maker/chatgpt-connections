@@ -23,6 +23,11 @@ of scope.
 
 ## Timeline
 
+- 2026-08-21 — Extracted the complete Worker, auth boundary, monitoring,
+  listing packages, tests, and history into the standalone
+  `sass-maker/chatgpt-connections` repository. CI and the SHA-tagged manual
+  deploy guard are now repository-local. No deployment or provider mutation
+  occurred.
 - 2026-08-12 — Added a redacted 32-case live submission preflight for the four
   anonymous plugins and fail-closed tracking for remaining browser/OAuth gates.
 - 2026-08-11 — Added the fixed-route Worker implementation, OAuth isolation,
@@ -73,4 +78,4 @@ of scope.
 
 ## Work queue
 
-[Fleet Workspace GitHub Issues](https://github.com/sass-maker/fleet-workspace/issues)
+[ChatGPT Connections GitHub Issues](https://github.com/sass-maker/chatgpt-connections/issues)

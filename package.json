@@ -1,5 +1,5 @@
 {
-  "name": "@fleet/chatgpt-connections",
+  "name": "@sass-maker/chatgpt-connections",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "types:worker": "wrangler types --include-runtime false",
     "types:check": "wrangler types --include-runtime false --check",
     "dev:worker": "wrangler dev",
-    "deploy": "node ../../ops/scripts/manual-component-deploy.mjs chatgpt-connections",
+    "deploy": "node scripts/deploy.mjs",
     "doctor": "pnpm run build && node dist/doctor.js",
     "monitor:production": "pnpm run build && node dist/run-monitor.js",
     "eval:submission:public": "pnpm run build && node dist/run-submission-evals.js",
