@@ -23,6 +23,12 @@ of scope.
 
 ## Timeline
 
+- 2026-08-22 — Made the repository public after a full 27-commit credential
+  scan found only one deterministic test fixture and no tracked secret files or
+  credential-shaped issue/PR content. Public visibility restored GitHub Actions;
+  the Personal Apps read-only route passed CI, merged, and deployed at exact SHA
+  `b296e05910ca808ce436f47bc0c1ecb1844f04c0` with 100% traffic. The route
+  remains fail-closed pending owner OAuth activation.
 - 2026-08-21 — Extracted the complete Worker, auth boundary, monitoring,
   listing packages, tests, and history into the standalone
   `sass-maker/chatgpt-connections` repository. CI and the SHA-tagged manual
@@ -50,6 +56,8 @@ of scope.
 
 - `fleet-chatgpt-connections` — Live SHA-tagged Cloudflare Worker at the
   compatibility `workers.dev` origin and seven independent branded domains.
+- Private Personal Apps route at `/personal-apps/mcp`, deployed in prepared
+  state with the exact `personal-apps.read` OAuth scope.
 - Seven public plugin endpoints: Reader, Calorie, Anime List, Starboard, High
   Signal, Significant Hobbies, and Research Papers.
 - Setline remains a fail-closed compatibility route and is not published.
