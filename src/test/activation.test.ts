@@ -111,6 +111,7 @@ test("activation verifier proves Auth0 metadata, JWKS, and every exact private r
     { id: "reader", path: "/reader/mcp", scope: "reader.read" },
     { id: "calorie", path: "/calorie/mcp", scope: "calorie.read" },
     { id: "setline", path: "/setline/mcp", scope: "setline.read" },
+    { id: "personal-apps", path: "/personal-apps/mcp", scope: "personal-apps.read" },
     { id: "anime-list", path: "/anime-list/mcp", scope: "anime-list.read" },
   ]);
   assert.deepEqual(receipt.manualGates, MANUAL_ACTIVATION_GATES);

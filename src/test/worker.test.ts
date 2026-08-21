@@ -67,7 +67,10 @@ function authorizationFor(path: string, overrides: Partial<OAuthGrantProps> = {}
   };
 }
 
-async function nativeMcpResponse(request: Request): Promise<Response> {
+async function nativeMcpResponse(
+  request: Request,
+  serverName = "anime-list-by-significant-hobbies",
+): Promise<Response> {
   const message = await request.clone().json() as { id?: number; method?: string; params?: { name?: string } };
   if (message.method === "initialize") {
     return Response.json({
@@ -76,7 +79,7 @@ async function nativeMcpResponse(request: Request): Promise<Response> {
       result: {
         protocolVersion,
         capabilities: { tools: {} },
-        serverInfo: { name: "anime-list-by-significant-hobbies", version: "1.0.0" },
+        serverInfo: { name: serverName, version: "1.0.0" },
       },
     });
   }
@@ -115,6 +118,9 @@ const routeFetch: typeof fetch = async (input, init) => {
   if (request.url === "https://anime.significanthobbies.com/api/mcp") {
     return nativeMcpResponse(request);
   }
+  if (request.url === "https://personal-platform.sarthakagrawal927.workers.dev/mcp") {
+    return nativeMcpResponse(request, "significant-hobbies-personal-apps");
+  }
   return Response.json({ items: [] });
 };
 
@@ -123,6 +129,7 @@ test("hosted route registry is fixed and public Research Papers exposes only exp
     "/reader/mcp",
     "/calorie/mcp",
     "/setline/mcp",
+    "/personal-apps/mcp",
     "/anime-list/mcp",
     "/anime-list-public/mcp",
     "/starboard/mcp",
