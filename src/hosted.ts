@@ -122,6 +122,18 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     tokenSecret: "SETLINE_MCP_TOKEN",
     app: APP_DEFINITIONS.setline,
   },
+  "/personal-apps/mcp": {
+    id: "personal-apps",
+    kind: "native",
+    audience: "personal",
+    hosts: ["personal-apps-mcp.significanthobbies.com"],
+    authMode: "federated",
+    oauthAudience: "https://mcp.significanthobbies.com/personal-apps/mcp",
+    scope: "personal-apps.read",
+    productionStatus: "prepared",
+    serverName: "significant-hobbies-personal-apps",
+    upstreamUrl: "https://personal-platform.sarthakagrawal927.workers.dev/mcp",
+  },
   "/anime-list/mcp": {
     id: "anime-list",
     kind: "native",
