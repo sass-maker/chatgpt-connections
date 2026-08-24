@@ -6,7 +6,7 @@ This is the review map for every upstream operation. Anything absent is unavaila
 | --- | --- | --- |
 | Reader | `GET /api/mcp/reading`, `/api/mcp/reading/:id`, `/api/mcp/collections` | writes, sharing, PDF download, AI chat, credentials |
 | Starboard | `GET /api/discover`, `/api/repos/:id?catalogOnly=1`, `/api/project-preview`, `/api/tools` | private GitHub data, saved projects, recommendations that require owner context, discussions/jobs/admin |
-| High Signal | `GET /signals.json`, `/brief/daily`, `/data/hit-rate.json` | watchlists, review/delivery/admin/ingest/refresh/provider operations |
+| High Signal | `GET https://api.highsignal.app/data/daily`, `/signals/:slug/evidence` | per-source browsing, raw article bodies, watchlists, review/delivery/admin/ingest/refresh/provider operations |
 | Calorie | `GET /api/mcp/daily`, `/history`, `/foods`, `/cycles` | all `/api/app` mutations; medication and weight tables/fields |
 | My Anime List | Native fixed catalog/detail/stats/random and owner-watchlist operations inside `/api/mcp` | every nonregistered route; browser cookie/JWT auth; watchlist mutations |
 | Anime List | Anonymous native `/api/mcp` proxy allowlisted to six catalog/detail/stats/random tools | watchlists, tags, account records, credentials, mutations |

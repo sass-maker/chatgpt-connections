@@ -1,6 +1,6 @@
 # API and tool parity
 
-Date: 2026-08-12
+Date: 2026-08-24
 
 “Parity” has three different meanings for these plugins:
 
@@ -23,7 +23,7 @@ other capabilities outside the read-only publication boundary.
 | My Anime List | 10 | Native production discovery returns the exact ten-tool catalog; authenticated branded discovery awaits the reviewer flow |
 | Anime List | 6 | Gateway tests enforce the exact anonymous native allowlist; activation pending |
 | Starboard | 4 | Daily production monitor enforces exact live catalog equality |
-| High Signal | 4 | Daily production monitor enforces exact live catalog equality |
+| High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence; production remains at 4 until an authorized release |
 | Significant Hobbies | 5 | Daily production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Daily production monitor enforces exact live catalog equality |
 | SWE Interview Prep | 5 | Gateway tests enforce exact catalog equality; production activation pending |

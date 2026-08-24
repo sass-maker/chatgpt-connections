@@ -51,11 +51,13 @@ const evaluationFetch: typeof fetch = async (input, init) => {
   const expectedTools = route.kind === "adapter" ? Object.keys(route.app.tools) : [...(route.allowedTools ?? [])];
   assert.ok(expectedTools.includes(name));
   if (name === "get_repository") assert.equal(typeof argumentsValue.id, "number");
-  if (name === "get_signal" || name === "get_experience") {
+  if (name === "get_signal_evidence" || name === "get_experience") {
     assert.equal(typeof argumentsValue.slug, "string");
   }
-  const empty = argumentsValue.q === "zzz-no-review-match-zzz" || argumentsValue.offset === 1_000_000;
-  const detail = name.startsWith("get_") || name === "preview_project";
+  const empty = argumentsValue.q === "zzz-no-review-match-zzz" ||
+    argumentsValue.offset === 1_000_000 || argumentsValue.date === "2099-12-31";
+  const detail = (name.startsWith("get_") && name !== "get_daily_signals") ||
+    name === "preview_project";
   if (route.id === "anime-list-public") {
     if (name === "get_anime_detail") assert.equal(typeof argumentsValue.mal_id, "number");
     const data = name === "search_anime" || name === "search_manga"
@@ -112,7 +114,7 @@ test("public submission evaluations retain stable failures without response bodi
   const fetchImpl: typeof fetch = async (input, init) => {
     const request = input instanceof Request ? input : new Request(input, init);
     const message = await request.clone().json() as { params: { name: string } };
-    if (message.params.name === "get_daily_brief") {
+    if (message.params.name === "get_signal_evidence") {
       return new Response("private upstream failure details", { status: 503 });
     }
     return evaluationFetch(request);
@@ -121,7 +123,7 @@ test("public submission evaluations retain stable failures without response bodi
   assert.equal(receipt.ok, false);
   assert.equal(receipt.summary.failed, 1);
   const failure = receipt.checks.find(({ plugin, kind, case: caseNumber }) =>
-    plugin === "high-signal" && kind === "positive" && caseNumber === 3
+    plugin === "high-signal" && kind === "positive" && caseNumber === 2
   );
   assert.equal(failure?.errorCode, "tool_call_status_invalid");
   assert.equal(JSON.stringify(receipt).includes("private upstream failure details"), false);

@@ -271,36 +271,41 @@ test("tool schemas cannot accept arbitrary transport instructions", () => {
 });
 
 test("detail selection uses an exact configured identifier", () => {
-  const app = APP_DEFINITIONS["high-signal"];
-  const tool = app.tools.get_signal!;
+  const app = APP_DEFINITIONS["research-papers"];
+  const tool = app.tools.get_reading_path!;
   const result = normalizeToolResult({
     app,
-    toolName: "get_signal",
+    toolName: "get_reading_path",
     tool,
-    payload: { signals: [{ slug: "right", title: "Exact" }, { slug: "right-now" }] },
+    payload: { items: [{ slug: "right", title: "Exact" }, { slug: "right-now" }] },
     args: { slug: "right" },
-    sourceUrl: "https://highsignal.app/signals.json",
+    sourceUrl: "https://papers.highsignal.app/paths.json",
   });
   assert.equal(result.item?.title, "Exact");
   assert.throws(
     () =>
       normalizeToolResult({
         app,
-        toolName: "get_signal",
+        toolName: "get_reading_path",
         tool,
-        payload: { signals: [{ slug: "right-now" }] },
+        payload: { items: [{ slug: "right-now" }] },
         args: { slug: "right" },
-        sourceUrl: "https://highsignal.app/signals.json",
+        sourceUrl: "https://papers.highsignal.app/paths.json",
       }),
     /not found/i,
   );
 });
 
 test("public operation routes stay on their verified anonymous surfaces", () => {
+  const daily = APP_DEFINITIONS["high-signal"].operations.daily!;
+  const evidence = APP_DEFINITIONS["high-signal"].operations.evidence!;
+  assert.equal(daily.baseUrl, "https://api.highsignal.app");
+  assert.equal(evidence.baseUrl, "https://api.highsignal.app");
   assert.equal(
-    APP_DEFINITIONS["high-signal"].operations.track!.path({}),
-    "/data/hit-rate.json",
+    daily.path({ date: "2026-08-24" }),
+    "/data/daily?date=2026-08-24",
   );
+  assert.equal(evidence.path({ slug: "daily-signal" }), "/signals/daily-signal/evidence");
   const readerSearch = APP_DEFINITIONS.reader.operations.search!.path({
     q: "paper",
     projectId: "owner_default",
@@ -315,6 +320,75 @@ test("public operation routes stay on their verified anonymous surfaces", () => 
   assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("127.0.0.1"));
   assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("http://example.com"));
   assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("[::1]"));
+});
+
+test("High Signal exposes exactly the daily signals and signal evidence tools", () => {
+  const app = APP_DEFINITIONS["high-signal"];
+  assert.deepEqual(Object.keys(app.tools), ["get_daily_signals", "get_signal_evidence"]);
+});
+
+test("High Signal daily tool normalizes one API-owned daily dump", () => {
+  const app = APP_DEFINITIONS["high-signal"];
+  const tool = app.tools.get_daily_signals!;
+  const result = normalizeToolResult({
+    app,
+    toolName: "get_daily_signals",
+    tool,
+    payload: {
+      schemaVersion: "1",
+      date: "2026-08-24",
+      signals: [
+        { slug: "one", confidence: "high" },
+        { slug: "two", confidence: "medium" },
+      ],
+      evidenceEvents: [{ signalSlug: "one", url: "https://example.com/evidence" }],
+    },
+    args: { date: "2026-08-24", limit: 1, offset: 0 },
+    sourceUrl: "https://api.highsignal.app/data/daily?date=2026-08-24",
+  });
+  assert.equal(result.items?.[0]?.slug, "one");
+  assert.equal(result.items?.[0]?.confidence, "high");
+  assert.equal(result.total, 2);
+  assert.equal(result.nextOffset, 1);
+  assert.equal(result.hasMore, true);
+});
+
+test("High Signal daily tool fails closed when the signals collection is absent", () => {
+  const app = APP_DEFINITIONS["high-signal"];
+  assert.throws(
+    () =>
+      normalizeToolResult({
+        app,
+        toolName: "get_daily_signals",
+        tool: app.tools.get_daily_signals!,
+        payload: { schemaVersion: "1", date: "2026-08-24" },
+        args: { limit: 10, offset: 0 },
+        sourceUrl: "https://api.highsignal.app/data/daily",
+      }),
+    /missing its public collection/i,
+  );
+});
+
+test("High Signal evidence tool preserves one signal's bounded proof trail", () => {
+  const app = APP_DEFINITIONS["high-signal"];
+  const result = normalizeToolResult({
+    app,
+    toolName: "get_signal_evidence",
+    tool: app.tools.get_signal_evidence!,
+    payload: {
+      schemaVersion: "1",
+      signal: { slug: "daily-signal", confidence: "high" },
+      evidenceEventCount: 2,
+      evidenceEvents: [
+        { sourceType: "scmp", url: "https://www.scmp.com/example" },
+        { sourceType: "hackernews", url: "https://news.ycombinator.com/item?id=1" },
+      ],
+    },
+    args: { slug: "daily-signal" },
+    sourceUrl: "https://api.highsignal.app/signals/daily-signal/evidence",
+  });
+  assert.equal(result.item?.evidenceEventCount, 2);
+  assert.equal(Array.isArray(result.item?.evidenceEvents), true);
 });
 
 test("new public catalogs normalize only their approved collections", () => {

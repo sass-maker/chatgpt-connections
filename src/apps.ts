@@ -478,49 +478,42 @@ const highSignal: AppDefinition = {
   baseUrl: "https://highsignal.app",
   baseUrlEnv: "HIGH_SIGNAL_API_URL",
   instructions:
-    "Read-only published High Signal data. Never access owner watchlists, delivery, review, admin, ingest, refresh, or provider operations.",
+    "Read-only daily High Signal data. Retrieve one UTC day of published signals, then fetch one signal's linked evidence only when further proof is needed.",
   operations: {
-    signals: { path: () => "/signals.json" },
-    signal: { path: () => "/signals.json" },
-    brief: { path: (a) => queryPath("/brief/daily", { region: a.region }) },
-    track: { path: () => "/data/hit-rate.json" },
+    daily: {
+      baseUrl: "https://api.highsignal.app",
+      path: (a) =>
+        queryPath("/data/daily", {
+          date: a.date,
+        }),
+    },
+    evidence: {
+      baseUrl: "https://api.highsignal.app",
+      path: (a) => `/signals/${encodeURIComponent(String(a.slug))}/evidence`,
+    },
   },
   tools: {
-    search_signals: {
-      title: "Search published signals",
-      description: "Search bounded published High Signal records and evidence.",
-      inputSchema: { q: optionalQuery, limit: commonLimitInput, offset: commonOffsetInput },
-      operation: "signals",
+    get_daily_signals: {
+      title: "Get daily signals",
+      description: "Retrieve High Signal's evidence-qualified published signals for one UTC day.",
+      inputSchema: {
+        date: date.optional().describe("Optional UTC date in YYYY-MM-DD format."),
+        limit: commonLimitInput,
+        offset: commonOffsetInput,
+      },
+      operation: "daily",
       mode: "public-api",
-      collectionKeys: ["signals", "items"],
-      localQuery: true,
+      collectionKeys: ["signals"],
+      requireCollection: true,
     },
-    get_signal: {
-      title: "Get published signal",
-      description: "Retrieve one published signal by slug from the bounded public feed.",
+    get_signal_evidence: {
+      title: "Get signal evidence",
+      description:
+        "Retrieve the canonical evidence events linked to one exact published signal slug.",
       inputSchema: { slug },
-      operation: "signal",
+      operation: "evidence",
       mode: "public-api",
       detail: true,
-      detailCollectionKeys: ["signals", "items"],
-      detailArgument: "slug",
-      detailFields: ["slug", "id"],
-    },
-    get_daily_brief: {
-      title: "Get Daily Brief",
-      description: "Retrieve the current public Daily Brief with freshness and evidence.",
-      inputSchema: { region: z.string().trim().max(64).optional() },
-      operation: "brief",
-      mode: "public-api",
-      detail: true,
-    },
-    get_track_record: {
-      title: "Get public track record",
-      description: "Retrieve bounded rows from High Signal's public hit-rate dataset.",
-      inputSchema: { limit: commonLimitInput, offset: commonOffsetInput },
-      operation: "track",
-      mode: "public-api",
-      collectionKeys: ["rows", "items"],
     },
   },
 };

@@ -351,8 +351,8 @@
     {
       "id": "high-signal",
       "name": "High Signal",
-      "shortDescription": "Query evidence-backed public signals, briefs, and track records.",
-      "longDescription": "Search High Signal's published intelligence, retrieve one signal, read the current public Daily Brief, and inspect the public hit-rate dataset. Watchlists, delivery state, admin tools, provider controls, ingest, and refresh operations are unavailable.",
+      "shortDescription": "Read daily public signals and inspect evidence for one signal.",
+      "longDescription": "Retrieve High Signal's evidence-qualified published signals for one UTC day, then inspect the canonical evidence events linked to an exact signal when further proof is needed. Per-source browsing, raw article bodies, watchlists, delivery state, admin tools, provider controls, ingest, and refresh operations are unavailable.",
       "category": "News",
       "website": "https://highsignal.app",
       "support": "https://github.com/High-Signal-App/high-signal/issues",
@@ -363,38 +363,38 @@
       "authentication": "None",
       "challengeSecret": "OPENAI_CHALLENGE_HIGH_SIGNAL",
       "starterPrompts": [
-        "Find recent public signals about AI infrastructure.",
-        "Give me today's High Signal brief.",
-        "Show the public track record behind High Signal."
+        "Give me today's High Signal signals.",
+        "Show the evidence behind the first signal.",
+        "What signals did High Signal publish yesterday?"
       ],
-      "releaseNotes": "Initial public submission of High Signal's anonymous published-data MCP tools.",
-      "reviewFixture": "No account required; tests use the live published signal feed.",
+      "releaseNotes": "Simplifies High Signal to daily signals and exact per-signal evidence backed by one stable daily dump API.",
+      "reviewFixture": "No account required; tests use the public daily signals and evidence APIs.",
       "tests": {
         "positive": [
           {
-            "prompt": "Find published signals about AI infrastructure.",
-            "expectedTool": "search_signals",
-            "expectedResult": "A bounded page of published signals and evidence."
+            "prompt": "Give me today's High Signal signals.",
+            "expectedTool": "get_daily_signals",
+            "expectedResult": "A bounded page from the current UTC daily dump."
           },
           {
-            "prompt": "Open the first signal from those results.",
-            "expectedTool": "get_signal",
-            "expectedResult": "One exact published signal selected by slug."
+            "prompt": "Show the evidence behind the first signal from those results.",
+            "expectedTool": "get_signal_evidence",
+            "expectedResult": "The exact signal metadata and its canonical linked evidence events."
           },
           {
-            "prompt": "Give me today's public Daily Brief.",
-            "expectedTool": "get_daily_brief",
-            "expectedResult": "The current public brief with freshness and evidence fields."
+            "prompt": "What signals did High Signal publish on 2026-08-23?",
+            "expectedTool": "get_daily_signals",
+            "expectedResult": "Only evidence-qualified signals from the requested UTC date."
           },
           {
-            "prompt": "Show the public High Signal track record.",
-            "expectedTool": "get_track_record",
-            "expectedResult": "A bounded page from the public hit-rate dataset."
-          },
-          {
-            "prompt": "Search published signals for zzz-no-review-match-zzz.",
-            "expectedTool": "search_signals",
+            "prompt": "Show High Signal signals for 2099-12-31.",
+            "expectedTool": "get_daily_signals",
             "expectedResult": "A successful empty page without fabricated signals."
+          },
+          {
+            "prompt": "Continue today's High Signal signals from the next offset.",
+            "expectedTool": "get_daily_signals",
+            "expectedResult": "The next bounded page from the same UTC daily dump."
           }
         ],
         "negative": [

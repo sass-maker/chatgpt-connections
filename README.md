@@ -35,7 +35,7 @@ independent domain challenge per submission.
 | My Anime List | `https://anime-mcp.significanthobbies.com/anime-list/mcp` | OAuth, `anime-list.read` | Full native read catalog plus user-scoped watchlists |
 | Anime List | `https://catalog-anime-mcp.significanthobbies.com/anime-list-public/mcp` | None | Prepared anonymous proxy exposing only six public catalog/discovery tools |
 | Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs |
-| High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | Published signal, brief, and track-record data |
+| High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | One UTC day of published signals plus exact per-signal evidence |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
 | SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | None | Published curriculum and system-design catalogs |

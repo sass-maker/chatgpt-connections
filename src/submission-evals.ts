@@ -79,20 +79,20 @@ const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> =
   },
   "high-signal": {
     positive: [
-      { tool: "search_signals", arguments: { q: "AI infrastructure", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "get_daily_signals", arguments: { limit: 1, offset: 0 }, shape: "page" },
       {
-        tool: "get_signal",
+        tool: "get_signal_evidence",
         arguments: {},
         dependency: {
-          tool: "search_signals",
-          arguments: { q: "AI", limit: 1, offset: 0 },
+          tool: "get_daily_signals",
+          arguments: { limit: 1, offset: 0 },
           fields: ["slug", "id"],
         },
         shape: "item",
       },
-      { tool: "get_daily_brief", arguments: {}, shape: "item" },
-      { tool: "get_track_record", arguments: { limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_signals", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
+      { tool: "get_daily_signals", arguments: { date: "2026-08-23", limit: 1, offset: 0 }, shape: "page" },
+      { tool: "get_daily_signals", arguments: { date: "2099-12-31", limit: 1, offset: 0 }, shape: "empty-page" },
+      { tool: "get_daily_signals", arguments: { limit: 1, offset: 1 }, shape: "page" },
     ],
     negativeTools: ["add_to_watchlist", "refresh_providers", "get_admin_queue"],
   },
