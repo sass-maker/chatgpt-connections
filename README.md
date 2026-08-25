@@ -198,11 +198,11 @@ bearers or source record bodies.
 Manual authenticated acceptance can pass short-lived bearer headers through
 `runProductionMonitor({ personalAuthorizations })`. When supplied, Reader,
 Calorie, and Anime List each receive the same three-page pagination check; the
-headers and source records are never copied into the receipt. Scheduled CI
-remains credential-free.
+headers and source records are never copied into the receipt. The manual
+workflow remains credential-free.
 
-GitHub Actions runs the same suite daily at 03:17 UTC and on manual dispatch.
-The redacted receipt is retained for 30 days even when a check fails:
+GitHub Actions runs the same suite on manual dispatch. The redacted receipt is
+retained for 30 days even when a check fails:
 
 ```bash
 pnpm monitor:production -- --output production-monitor-receipt.json

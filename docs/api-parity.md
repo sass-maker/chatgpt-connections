@@ -22,10 +22,10 @@ other capabilities outside the read-only publication boundary.
 | Calorie | 4 | Gateway/product tests pass; authenticated live discovery awaits the OpenAI reviewer flow |
 | My Anime List | 10 | Native production discovery returns the exact ten-tool catalog; authenticated branded discovery awaits the reviewer flow |
 | Anime List | 6 | Gateway tests enforce the exact anonymous native allowlist; activation pending |
-| Starboard | 4 | Daily production monitor enforces exact live catalog equality |
+| Starboard | 4 | Manual production monitor enforces exact live catalog equality |
 | High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence; production remains at 4 until an authorized release |
-| Significant Hobbies | 5 | Daily production monitor enforces exact live catalog equality |
-| Research Papers | 3 | Daily production monitor enforces exact live catalog equality |
+| Significant Hobbies | 5 | Manual production monitor enforces exact live catalog equality |
+| Research Papers | 3 | Manual production monitor enforces exact live catalog equality |
 | SWE Interview Prep | 5 | Gateway tests enforce exact catalog equality; production activation pending |
 | SaaS Maker | 4 | Gateway tests enforce exact catalog equality; production activation pending |
 | Drank | 1 | Gateway tests enforce exact catalog equality; production activation pending |
