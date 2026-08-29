@@ -1,6 +1,6 @@
 # API and tool parity
 
-Date: 2026-08-24
+Date: 2026-08-29
 
 “Parity” has three different meanings for these plugins:
 
@@ -22,8 +22,8 @@ other capabilities outside the read-only publication boundary.
 | Calorie | 4 | Gateway/product tests pass; authenticated live discovery awaits the OpenAI reviewer flow |
 | My Anime List | 10 | Native production discovery returns the exact ten-tool catalog; authenticated branded discovery awaits the reviewer flow |
 | Anime List | 6 | Gateway tests enforce the exact anonymous native allowlist; activation pending |
-| Starboard | 4 | Manual production monitor enforces exact live catalog equality |
-| High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence; production remains at 4 until an authorized release |
+| Starboard | 4 | Live catalog equality holds, but every tool *call* currently fails: Starboard's edge worker 404s all `GET /api/*`. See "Known outages" in the README |
+| High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence, and production now serves the same 2 (`get_daily_signals`, `get_signal_evidence`) since the reduction shipped in `ef11d519`. Its live dataset is currently empty; that is tracked separately |
 | Significant Hobbies | 5 | Manual production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Manual production monitor enforces exact live catalog equality |
 | SWE Interview Prep | 5 | Gateway tests enforce exact catalog equality; production activation pending |

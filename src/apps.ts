@@ -604,7 +604,10 @@ const significantHobbies: AppDefinition = {
   id: "significant-hobbies",
   name: "Significant Hobbies",
   serverName: "fleet-significant-hobbies-readonly",
-  baseUrl: "https://significanthobbies.com",
+  // Canonical host after the Live migration. The apex now 308-redirects every
+  // /api/* path here and the gateway deliberately refuses redirects, so the
+  // adapter must target the canonical host directly.
+  baseUrl: "https://live.significanthobbies.com",
   baseUrlEnv: "SIGNIFICANT_HOBBIES_API_URL",
   instructions:
     "Read-only public hobby, experience, and PUBLIC timeline data. Never access Daily, journals, habits, Trajectory, commitments, bucket lists, accounts, or device-local data.",

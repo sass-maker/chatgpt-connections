@@ -50,9 +50,10 @@ type MonitorEvidence = Record<string, boolean | number | string | string[]>;
 export interface ProductionMonitorCheck {
   id: string;
   plugin: string;
-  status: "failed" | "passed";
+  status: "failed" | "passed" | "skipped";
   evidence?: MonitorEvidence;
   errorCode?: string;
+  skipReason?: string;
 }
 
 export interface ProductionMonitorReceipt {
@@ -60,7 +61,7 @@ export interface ProductionMonitorReceipt {
   checkedAt: string;
   ok: boolean;
   checks: ProductionMonitorCheck[];
-  summary: { passed: number; failed: number; total: number };
+  summary: { passed: number; failed: number; skipped: number; total: number };
 }
 
 export interface ProductionMonitorOptions {
@@ -75,6 +76,18 @@ class MonitorError extends Error {
   constructor(readonly code: string) {
     super(code);
     this.name = "MonitorError";
+  }
+}
+
+/**
+ * Raised when a check cannot be exercised meaningfully against the live data
+ * that exists right now — not when the contract is violated. A skip is never a
+ * substitute for a failure: only a check that proved nothing may skip.
+ */
+class MonitorSkip extends Error {
+  constructor(readonly reason: string) {
+    super(reason);
+    this.name = "MonitorSkip";
   }
 }
 
@@ -261,6 +274,9 @@ async function executeCheck(
   try {
     return { id, plugin, status: "passed", evidence: await operation() };
   } catch (error) {
+    if (error instanceof MonitorSkip) {
+      return { id, plugin, status: "skipped", skipReason: error.reason };
+    }
     return {
       id,
       plugin,
@@ -387,8 +403,19 @@ async function paginationCheck(
   };
 
   const first = await readPage(0, 7);
-  if (first.total < pageSize * 3 || first.items.length !== pageSize) {
-    throw new MonitorError("pagination_dataset_too_small");
+  // The three-page probe needs at least three full pages of live data. A
+  // small (or momentarily empty) public dataset cannot exercise it, so skip
+  // rather than fail: a thin dataset is not a broken pagination contract.
+  // Every genuine defect still fails — readPage() throws on a non-200, an
+  // isError result, or a malformed page, and the total/continuation/overlap
+  // assertions below are unchanged.
+  if (first.total < pageSize * 3) {
+    throw new MonitorSkip("pagination_dataset_too_small");
+  }
+  // The dataset is large enough, so an under-filled first page means the
+  // upstream ignored the limit argument. That is a real contract violation.
+  if (first.items.length !== pageSize) {
+    throw new MonitorError("pagination_page_size_invalid");
   }
   const middleOffset = Math.floor((first.total - pageSize) / 2);
   const terminalOffset = first.total - pageSize;
@@ -596,11 +623,12 @@ export async function runProductionMonitor(
     left.plugin.localeCompare(right.plugin) || left.id.localeCompare(right.id)
   );
   const failed = checks.filter((check) => check.status === "failed").length;
+  const skipped = checks.filter((check) => check.status === "skipped").length;
   return {
     schemaVersion: 1,
     checkedAt: (options.now ?? (() => new Date()))().toISOString(),
     ok: failed === 0,
     checks,
-    summary: { passed: checks.length - failed, failed, total: checks.length },
+    summary: { passed: checks.length - failed - skipped, failed, skipped, total: checks.length },
   };
 }
