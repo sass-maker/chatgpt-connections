@@ -1,0 +1,30 @@
+{
+  "$schema": "fleet.landing-audit.scorecard.v1",
+  "project": "chatgpt-connections",
+  "priority": "P2",
+  "surfaceMode": "none",
+  "applicability": "not-applicable",
+  "productionChanged": false,
+  "checkedAt": "2026-08-28",
+  "purpose": {
+    "score": null,
+    "reason": "ChatGPT Connections is Fleet's shared read-only MCP gateway, not a public product acquisition surface."
+  },
+  "design": {
+    "score": null,
+    "reason": "The repository exposes protocol endpoints and product-specific listing packages; it does not own a general marketing website."
+  },
+  "publicSurface": {
+    "expected": false,
+    "observedCanonicalDomains": [],
+    "publicListing": "hidden",
+    "deploymentKind": "worker"
+  },
+  "verification": {
+    "dossier": "docs/project-dossiers/chatgpt-connections.yaml",
+    "dossierStatus": "verified",
+    "repositoryFiles": "Worker source, MCP listing packages, documentation, and tests only; no landing-page application or HTML surface",
+    "publicProtocol": "Eleven bounded product-specific MCP routes are the intended public interface"
+  },
+  "decision": "Do not invent, host, SEO-audit, GEO-audit, or rank a standalone landing page for this infrastructure project. Evaluate each listed product through its own canonical website instead."
+}
