@@ -28,19 +28,38 @@ The compatibility workers.dev origin remains active. Public submissions use a
 different branded hostname for every plugin so OpenAI can verify and retain one
 independent domain challenge per submission.
 
+Seven hostnames resolve and serve traffic today. The remaining hostnames below
+are **planned names, not production URLs** — they have no DNS record and no
+entry in `wrangler.jsonc`, so they will not resolve until their route is
+activated. Do not publish or submit them.
+
 | Product | Production MCP URL | ChatGPT auth | Upstream boundary |
 | --- | --- | --- | --- |
 | Reader | `https://reader-mcp.significanthobbies.com/reader/mcp` | OAuth, `reader.read` | Reader verifies the caller token and resolves its Auth0 subject to that user's account |
 | Calorie | `https://calorie-mcp.significanthobbies.com/calorie/mcp` | OAuth, `calorie.read` | Calorie verifies the caller token and resolves its Auth0 subject to that user's account |
 | My Anime List | `https://anime-mcp.significanthobbies.com/anime-list/mcp` | OAuth, `anime-list.read` | Full native read catalog plus user-scoped watchlists |
-| Anime List | `https://catalog-anime-mcp.significanthobbies.com/anime-list-public/mcp` | None | Prepared anonymous proxy exposing only six public catalog/discovery tools |
-| Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs |
+| Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs — **tool calls currently fail upstream**, see [Known outages](#known-outages) |
 | High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | One UTC day of published signals plus exact per-signal evidence |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
+
+### Planned hostnames (no DNS yet)
+
+These routes exist in code but are not deployed. The hostnames below do not
+resolve and are not registered in `wrangler.jsonc`.
+
+| Product | Planned MCP URL | ChatGPT auth | Upstream boundary |
+| --- | --- | --- | --- |
+| Anime List | `https://catalog-anime-mcp.significanthobbies.com/anime-list-public/mcp` | None | Prepared anonymous proxy exposing only six public catalog/discovery tools |
 | SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | None | Published curriculum and system-design catalogs |
 | SaaS Maker | `https://mcp.sassmaker.com/saas-maker/mcp` | None | Privacy-checked public `/api/ai` portfolio projection |
 | Drank | `https://domains-mcp.sassmaker.com/drank/mcp` | None | Live rating for one validated public hostname |
+| Setline | `https://setline-mcp.significanthobbies.com/setline/mcp` | Owner token | Owner-only Setline projection |
+| Personal Apps | `https://personal-apps-mcp.significanthobbies.com/personal-apps/mcp` | OAuth, `personal-apps.read` | Prepared native personal-platform proxy |
+
+`mcp.significanthobbies.com` also has no DNS record, and that is correct: it is
+only the immutable Auth0 audience identifier for Reader, Calorie, and Anime
+List. It is advertised in protected-resource metadata and is never fetched.
 
 Setline remains available only on the compatibility endpoint and is not one of
 the eleven listing packages. It retains the existing owner-only token bridge
@@ -108,7 +127,7 @@ and every other hosted product must not be added to Codex.
 | Setline | API projection ready | Live Worker route; OAuth metadata verified | Auth0 API/grant ready; owner account/token pending, route fails closed | ChatGPT app deferred |
 | My Anime List | Federated native MCP and tests live | Branded token-forwarding proxy live | Canonical Auth0 API/grant verified | OpenAI portal draft/submission pending |
 | Anime List | Public native catalog live | Six-tool anonymous proxy implemented; not deployed | No auth | Activation pending |
-| Starboard | Public API live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
+| Starboard | **Public API unreachable — blocked upstream** (see [Known outages](#known-outages)) | Anonymous branded route live | No auth | Submission blocked until the upstream fix ships |
 | High Signal | Public surface live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Research Papers | Public exports live | Export-only branded route live | No auth | OpenAI portal draft/submission pending |
@@ -201,12 +220,62 @@ Calorie, and Anime List each receive the same three-page pagination check; the
 headers and source records are never copied into the receipt. The manual
 workflow remains credential-free.
 
-GitHub Actions runs the same suite on manual dispatch. The redacted receipt is
-retained for 30 days even when a check fails:
+The three-page pagination probe needs at least three full pages of live data.
+When a public dataset is genuinely smaller than that, the check records
+`status: "skipped"` with `skipReason: "pagination_dataset_too_small"` instead of
+failing, and the receipt summary reports skips separately from passes. A skip
+never masks a defect: a non-200, an `isError` result, a malformed page, an
+unstable total, invalid continuation state, overlapping pages, or a page that
+ignores the `limit` argument all still fail.
+
+GitHub Actions runs the same suite daily at 03:17 UTC and on manual dispatch.
+The redacted receipt is retained for 30 days even when a check fails:
 
 ```bash
 pnpm monitor:production -- --output production-monitor-receipt.json
 ```
+
+## Known outages
+
+### Starboard — public API unreachable (open, upstream)
+
+Every Starboard tool returns `not_found`. The gateway adapter is correct and
+its four upstream paths still exist and are still deployed; the requests are
+being intercepted before they reach them.
+
+Starboard's Worker entry (`worker.mjs`) calls `handleAgentEdge(request)` before
+delegating to OpenNext. Starboard commit `4c67733` (2026-08-23, "Add Clarity,
+an OpenAPI spec, and Accept-aware caching") added a catch-all to
+`agent-edge.mjs`:
+
+```js
+// JSON error for unknown /api/* paths
+if (path.startsWith('/api/')) {
+  return jsonError(404, 'not_found', `Unknown API path: ${path}`, path);
+}
+```
+
+`handleAgentEdge` returns early for `GET` and `HEAD` only, and only
+`/api/ai` is allow-listed above that branch. So every other `GET /api/*` path
+is answered with a 404 at the edge and never reaches the Next.js route
+handlers — including `/api/health`, which is unrelated to this gateway.
+
+The routes themselves are alive. `POST /api/discover` on production returns
+`405 Method Not Allowed` from the real Next.js handler, which proves the route
+is deployed and only the GET path is shadowed.
+
+The public API was neither moved nor retired, so this repository must not
+repoint the adapter — its paths are already the correct ones. The fix belongs
+in `Codevetter/starboard`: allow-list the real public API paths (or restrict
+the catch-all to paths the edge actually owns) in `agent-edge.mjs`. Starboard
+tool calls will start working again the moment that ships, with no change here.
+
+### High Signal — empty dataset (open, tracked separately)
+
+High Signal's tools respond correctly but `api.highsignal.app/data/daily`
+currently reports `signalCount: 0`, so reads return no rows. This is under
+separate investigation and is not addressed here. It is the reason the
+pagination check now skips small datasets rather than failing them.
 
 ## Submission evaluations
 

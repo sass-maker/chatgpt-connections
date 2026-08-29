@@ -138,7 +138,7 @@ test("production monitor retains only redacted contract evidence", async () => {
     now: () => new Date("2026-08-12T00:00:00.000Z"),
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 70, failed: 0, total: 70 });
+  assert.deepEqual(receipt.summary, { passed: 70, failed: 0, skipped: 0, total: 70 });
   assert.equal(receipt.checkedAt, "2026-08-12T00:00:00.000Z");
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("must-never-enter-receipt"), false);
@@ -151,7 +151,7 @@ test("production monitor retains only redacted contract evidence", async () => {
 
 test("production monitor excludes prepared routes until activation", async () => {
   const receipt = await runProductionMonitor({ fetchImpl: productionFetch });
-  assert.deepEqual(receipt.summary, { passed: 43, failed: 0, total: 43 });
+  assert.deepEqual(receipt.summary, { passed: 43, failed: 0, skipped: 0, total: 43 });
   assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 4);
   assert.equal(receipt.checks.filter(({ id }) => id === "pagination").length, 4);
   assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 7);
@@ -167,7 +167,7 @@ test("production monitor can verify private collection pagination without retain
     },
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 46, failed: 0, total: 46 });
+  assert.deepEqual(receipt.summary, { passed: 46, failed: 0, skipped: 0, total: 46 });
   assert.equal(receipt.checks.filter(({ id }) => id === "authenticated-pagination").length, 3);
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("private-monitor-secret"), false);
@@ -220,6 +220,146 @@ test("production monitor requires exact public tool-catalog parity", async () =>
   const receipt = await runProductionMonitor({ fetchImpl });
   const failure = receipt.checks.find(({ plugin, id }) => plugin === "starboard" && id === "tools-readonly");
   assert.equal(failure?.errorCode, "tool_catalog_parity_invalid");
+});
+
+/**
+ * Serves Significant Hobbies' pagination tool from a dataset of `total` items,
+ * honouring limit/offset exactly. Every other route keeps the normal stub.
+ */
+function smallDatasetFetch(total: number): typeof fetch {
+  return async (input, init) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    const url = new URL(request.url);
+    if (url.hostname === HOSTED_ROUTES["/significant-hobbies/mcp"]!.hosts[0] && request.method === "POST") {
+      const message = await request.clone().json() as {
+        id: number;
+        method: string;
+        params?: { name?: string; arguments?: { limit?: number; offset?: number } };
+      };
+      if (message.method === "tools/call" && message.params?.name === "search_public_timelines") {
+        const offset = message.params.arguments?.offset ?? 0;
+        const limit = message.params.arguments?.limit ?? 2;
+        const items = Array.from(
+          { length: Math.max(0, Math.min(limit, total - offset)) },
+          (_, index) => ({ id: `timeline-${offset + index}` }),
+        );
+        const nextOffset = offset + items.length < total ? offset + items.length : null;
+        return responseJson({
+          jsonrpc: "2.0",
+          id: message.id,
+          result: {
+            structuredContent: {
+              schemaVersion: "1",
+              ok: true,
+              tool: "search_public_timelines",
+              items,
+              total,
+              nextOffset,
+              hasMore: nextOffset !== null,
+              truncated: nextOffset !== null,
+            },
+          },
+        });
+      }
+    }
+    return productionFetch(request);
+  };
+}
+
+test("a live dataset too small for three pages skips pagination instead of failing", async () => {
+  const receipt = await runProductionMonitor({ fetchImpl: smallDatasetFetch(3) });
+  const check = receipt.checks.find(
+    ({ plugin, id }) => plugin === "significant-hobbies" && id === "pagination",
+  );
+  assert.deepEqual(check, {
+    id: "pagination",
+    plugin: "significant-hobbies",
+    status: "skipped",
+    skipReason: "pagination_dataset_too_small",
+  });
+  assert.equal(receipt.ok, true);
+  assert.deepEqual(receipt.summary, { passed: 42, failed: 0, skipped: 1, total: 43 });
+});
+
+test("an empty live dataset skips pagination instead of failing", async () => {
+  const receipt = await runProductionMonitor({ fetchImpl: smallDatasetFetch(0) });
+  const check = receipt.checks.find(
+    ({ plugin, id }) => plugin === "significant-hobbies" && id === "pagination",
+  );
+  assert.equal(check?.status, "skipped");
+  assert.equal(check?.skipReason, "pagination_dataset_too_small");
+  assert.equal(receipt.ok, true);
+});
+
+test("a broken pagination call still fails even though small datasets skip", async () => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    const url = new URL(request.url);
+    if (url.hostname === HOSTED_ROUTES["/significant-hobbies/mcp"]!.hosts[0] && request.method === "POST") {
+      const message = await request.clone().json() as {
+        id: number;
+        method: string;
+        params?: { name?: string };
+      };
+      if (message.method === "tools/call" && message.params?.name === "search_public_timelines") {
+        return responseJson({
+          jsonrpc: "2.0",
+          id: message.id,
+          result: { isError: true, content: [{ type: "text", text: "upstream unavailable" }] },
+        });
+      }
+    }
+    return productionFetch(request);
+  };
+  const receipt = await runProductionMonitor({ fetchImpl });
+  const failure = receipt.checks.find(
+    ({ plugin, id }) => plugin === "significant-hobbies" && id === "pagination",
+  );
+  assert.equal(failure?.status, "failed");
+  assert.equal(failure?.errorCode, "pagination_call_failed");
+  assert.equal(receipt.ok, false);
+});
+
+test("a large dataset that ignores the limit argument still fails", async () => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    const url = new URL(request.url);
+    if (url.hostname === HOSTED_ROUTES["/significant-hobbies/mcp"]!.hosts[0] && request.method === "POST") {
+      const message = await request.clone().json() as {
+        id: number;
+        method: string;
+        params?: { name?: string; arguments?: { limit?: number; offset?: number } };
+      };
+      if (message.method === "tools/call" && message.params?.name === "search_public_timelines") {
+        const offset = message.params.arguments?.offset ?? 0;
+        return responseJson({
+          jsonrpc: "2.0",
+          id: message.id,
+          result: {
+            structuredContent: {
+              schemaVersion: "1",
+              ok: true,
+              tool: "search_public_timelines",
+              // Ignores `limit` and returns a single item per page.
+              items: [{ id: `timeline-${offset}` }],
+              total: 10,
+              nextOffset: offset + 1,
+              hasMore: true,
+              truncated: true,
+            },
+          },
+        });
+      }
+    }
+    return productionFetch(request);
+  };
+  const receipt = await runProductionMonitor({ fetchImpl });
+  const failure = receipt.checks.find(
+    ({ plugin, id }) => plugin === "significant-hobbies" && id === "pagination",
+  );
+  assert.equal(failure?.status, "failed");
+  assert.equal(failure?.errorCode, "pagination_page_size_invalid");
+  assert.equal(receipt.ok, false);
 });
 
 test("production monitor rejects pagination totals that change between pages", async () => {
