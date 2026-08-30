@@ -205,7 +205,6 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
     authMode: "federated",
     oauthAudience: "https://mcp.significanthobbies.com/swe-interview-prep/mcp",
     scope: "swe-interview-prep.read",
-    productionStatus: "prepared",
     app: APP_DEFINITIONS["swe-interview-prep"],
   },
   "/saas-maker/mcp": {

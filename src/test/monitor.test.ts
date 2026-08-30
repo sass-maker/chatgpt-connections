@@ -151,10 +151,11 @@ test("production monitor retains only redacted contract evidence", async () => {
 
 test("production monitor excludes prepared routes until activation", async () => {
   const receipt = await runProductionMonitor({ fetchImpl: productionFetch });
-  assert.deepEqual(receipt.summary, { passed: 43, failed: 0, skipped: 0, total: 43 });
+  assert.deepEqual(receipt.summary, { passed: 48, failed: 0, skipped: 0, total: 48 });
   assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 4);
   assert.equal(receipt.checks.filter(({ id }) => id === "pagination").length, 4);
-  assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 7);
+  assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 8);
+  assert.equal(receipt.checks.filter(({ id }) => id === "oauth-resource").length, 4);
 });
 
 test("production monitor can verify private collection pagination without retaining bearers", async () => {
@@ -167,7 +168,7 @@ test("production monitor can verify private collection pagination without retain
     },
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 46, failed: 0, skipped: 0, total: 46 });
+  assert.deepEqual(receipt.summary, { passed: 51, failed: 0, skipped: 0, total: 51 });
   assert.equal(receipt.checks.filter(({ id }) => id === "authenticated-pagination").length, 3);
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("private-monitor-secret"), false);
@@ -278,7 +279,7 @@ test("a live dataset too small for three pages skips pagination instead of faili
     skipReason: "pagination_dataset_too_small",
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 42, failed: 0, skipped: 1, total: 43 });
+  assert.deepEqual(receipt.summary, { passed: 47, failed: 0, skipped: 1, total: 48 });
 });
 
 test("an empty live dataset skips pagination instead of failing", async () => {

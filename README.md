@@ -42,6 +42,7 @@ activated. Do not publish or submit them.
 | High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | One UTC day of published signals plus exact per-signal evidence |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
+| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | OAuth, `swe-interview-prep.read` | Product-computed daily priority and progress, plus published curriculum catalogs |
 
 ### Planned hostnames (no DNS yet)
 
@@ -51,7 +52,6 @@ resolve and are not registered in `wrangler.jsonc`.
 | Product | Planned MCP URL | ChatGPT auth | Upstream boundary |
 | --- | --- | --- | --- |
 | Anime List | `https://catalog-anime-mcp.significanthobbies.com/anime-list-public/mcp` | None | Prepared anonymous proxy exposing only six public catalog/discovery tools |
-| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | OAuth, `swe-interview-prep.read` | Product-computed daily priority and progress, plus published curriculum catalogs |
 | SaaS Maker | `https://mcp.sassmaker.com/saas-maker/mcp` | None | Privacy-checked public `/api/ai` portfolio projection |
 | Drank | `https://domains-mcp.sassmaker.com/drank/mcp` | None | Live rating for one validated public hostname |
 | Setline | `https://setline-mcp.significanthobbies.com/setline/mcp` | Owner token | Owner-only Setline projection |
@@ -133,7 +133,7 @@ and every other hosted product must not be added to Codex.
 | High Signal | Public surface live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Research Papers | Public exports live | Export-only branded route live | No auth | OpenAI portal draft/submission pending |
-| SWE Interview Prep | Public catalogs and private projections implemented | OAuth gateway route implemented; not deployed | `swe-interview-prep.read` contract ready | Activation pending |
+| SWE Interview Prep | Public catalogs and private projections live | Branded OAuth gateway route live | `swe-interview-prep.read` metadata verified | ChatGPT creation and authenticated smoke pending |
 | SaaS Maker | Public agent projection live | Gateway route implemented; not deployed | No auth | Activation pending |
 | Drank | Public validated lookup live | Gateway route implemented; not deployed | No auth | Activation pending |
 
@@ -144,8 +144,8 @@ representative public live calls pass. OpenAI portal drafts, per-draft domain
 challenge secrets, reviewer-account fixtures, retained ChatGPT evaluations,
 review, and publication remain; Setline is not part of this publication.
 
-The four prepared routes—public Anime List, SWE Interview Prep, SaaS Maker, and
-Drank—are intentionally not deployed by this change. Their domains, production
+The three prepared routes—public Anime List, SaaS Maker, and Drank—are
+intentionally not deployed. Their domains, production
 monitoring claims, OpenAI drafts, and challenge secrets remain activation work.
 LoopTV, PostTrainLLM, and What It Takes to Win are explicitly **not needed for
 now** and are outside the release surface. The full eligibility review is in

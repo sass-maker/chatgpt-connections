@@ -26,7 +26,7 @@ other capabilities outside the read-only publication boundary.
 | High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence, and production now serves the same 2 (`get_daily_signals`, `get_signal_evidence`) since the reduction shipped in `ef11d519`. Its live dataset is currently empty; that is tracked separately |
 | Significant Hobbies | 5 | Manual production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Manual production monitor enforces exact live catalog equality |
-| SWE Interview Prep | 7 | Gateway and product tests enforce the five public curriculum tools plus two OAuth, user-scoped learning projections; production activation pending |
+| SWE Interview Prep | 7 | Gateway and product tests enforce the five public curriculum tools plus two OAuth, user-scoped learning projections; live OAuth metadata and unauthenticated fail-closed checks pass, while authenticated ChatGPT discovery remains the final gate |
 | SaaS Maker | 4 | Gateway tests enforce exact catalog equality; production activation pending |
 | Drank | 1 | Gateway tests enforce exact catalog equality; production activation pending |
 

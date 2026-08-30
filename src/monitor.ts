@@ -604,7 +604,7 @@ export async function runProductionMonitor(
   const fetchImpl = options.fetchImpl ?? fetch;
   const issuer = options.issuer ?? PRODUCTION_AUTH0_ISSUER;
   const entries = publishedRoutes(options.includePrepared);
-  const expectedRouteCount = options.includePrepared ? 11 : 7;
+  const expectedRouteCount = options.includePrepared ? 11 : 8;
   if (entries.length !== expectedRouteCount) throw new MonitorError("published_route_count_invalid");
   const nested = await Promise.all(entries.map((entry, index) => {
     const wrongPath = entries[(index + 1) % entries.length]?.path;
