@@ -907,12 +907,13 @@ const sweInterviewPrep: AppDefinition = {
   baseUrl: "https://learn.significanthobbies.com",
   baseUrlEnv: "SWE_INTERVIEW_PREP_API_URL",
   instructions:
-    "Read-only access to the public SWE Interview Prep curriculum and the signed-in learner's daily priority and progress. Treat progress as evidence, not self-attested mastery. Never change progress, notes, reviews, plans, chats, code, or account data.",
+    "Read-only access to the public SWE Interview Prep curriculum and the signed-in learner's daily priority, progress, and current understanding check. Use the daily priority for both scheduled and on-demand learning in the same conversation, and provide its actionUrl or conceptUrl when a link is useful. Before describing a concept as complete or advancing to the next topic, use the current learning check and ask one Socratic question at a time. Conversation alone never completes learning: if product evidence is pending, say so, continue the check, link to the product action, or label any next item as a preview. After the learner completes the product gate, re-read the daily priority. Never reveal review answers or change progress, notes, reviews, plans, chats, code, or account data.",
   operations: {
     curriculum: { path: () => "/curriculum/catalog.json", mode: "public-static" },
     cases: { path: () => "/system-design/catalog.json", mode: "public-static" },
     daily: { path: () => "/api/mcp/daily", auth: true, mode: "user-api" },
     progress: { path: () => "/api/mcp/progress", auth: true, mode: "user-api" },
+    verification: { path: () => "/api/mcp/verification", auth: true, mode: "user-api" },
   },
   tools: {
     get_daily_learning_priority: {
@@ -930,6 +931,15 @@ const sweInterviewPrep: AppDefinition = {
         "Retrieve the signed-in learner's read-only mastery, review, drill, and recent-activity summary.",
       inputSchema: {},
       operation: "progress",
+      mode: "user-api",
+      detail: true,
+    },
+    get_current_learning_check: {
+      title: "Get current understanding check",
+      description:
+        "Retrieve answer-free Socratic questions for the signed-in learner's current concept. Use before calling a concept complete or offering verified progression; ask one question at a time and direct the learner to the returned product action for evidence-backed completion.",
+      inputSchema: {},
+      operation: "verification",
       mode: "user-api",
       detail: true,
     },

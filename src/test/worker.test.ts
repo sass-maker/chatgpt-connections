@@ -299,33 +299,55 @@ test("private OAuth tokens remain isolated under concurrent calls and propagate 
 
 test("SWE Interview Prep forwards the verified OAuth bearer only to private learning reads", async () => {
   const seen: Array<{ authorization: string | null; url: string }> = [];
-  const response = await handleHostedRequest(
-    requestFor("/swe-interview-prep/mcp", {
-      jsonrpc: "2.0",
-      id: 9,
-      method: "tools/call",
-      params: { name: "get_daily_learning_priority", arguments: {} },
-    }),
-    async (input, init) => {
-      seen.push({
-        authorization: new Headers(init?.headers).get("authorization"),
-        url: String(input),
-      });
-      return Response.json({
-        priority: { kind: "retention", concept: { id: "load-balancing" } },
-        trackingPolicy: { readOnly: true },
-      });
-    },
-    authorizationFor("/swe-interview-prep/mcp"),
+  const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    seen.push({
+      authorization: new Headers(init?.headers).get("authorization"),
+      url,
+    });
+    return url.endsWith("/verification")
+      ? Response.json({ state: "verification-required", questions: [{ prompt: "Explain it." }] })
+      : Response.json({
+          priority: { kind: "retention", concept: { id: "load-balancing" } },
+          trackingPolicy: { readOnly: true },
+        });
+  };
+  const call = (id: number, name: string) =>
+    handleHostedRequest(
+      requestFor("/swe-interview-prep/mcp", {
+        jsonrpc: "2.0",
+        id,
+        method: "tools/call",
+        params: { name, arguments: {} },
+      }),
+      fetcher,
+      authorizationFor("/swe-interview-prep/mcp"),
+    );
+
+  const [dailyResponse, verificationResponse] = await Promise.all([
+    call(9, "get_daily_learning_priority"),
+    call(10, "get_current_learning_check"),
+  ]);
+  assert.equal(dailyResponse.status, 200);
+  assert.equal(verificationResponse.status, 200);
+  assert.deepEqual(new Set(seen.map(({ url }) => url)), new Set([
+    "https://learn.significanthobbies.com/api/mcp/daily",
+    "https://learn.significanthobbies.com/api/mcp/verification",
+  ]));
+  assert.equal(
+    seen.every(
+      ({ authorization }) =>
+        authorization === "Bearer sweinterviewprepHeader.oauthPayload.oauthSignature",
+    ),
+    true,
   );
-  assert.equal(response.status, 200);
-  assert.deepEqual(seen, [{
-    authorization: "Bearer sweinterviewprepHeader.oauthPayload.oauthSignature",
-    url: "https://learn.significanthobbies.com/api/mcp/daily",
-  }]);
-  const body = JSON.stringify(await json(response));
-  assert.equal(body.includes("load-balancing"), true);
-  assert.equal(body.includes("oauthPayload"), false);
+  const bodies = [
+    JSON.stringify(await json(dailyResponse)),
+    JSON.stringify(await json(verificationResponse)),
+  ];
+  assert.equal(bodies[0]!.includes("load-balancing"), true);
+  assert.equal(bodies[1]!.includes("Explain it."), true);
+  assert.equal(bodies.some((body) => body.includes("oauthPayload")), false);
 });
 
 test("Anime List proxy fixes the upstream URL and forwards the verified OAuth bearer", async () => {

@@ -13,7 +13,7 @@ This is the review map for every upstream operation. Anything absent is unavaila
 | Significant Hobbies | `GET /api/mcp/hobbies`, `/experiences`, `/experiences/:slug`, `/timelines`, `/timelines/:id` | every private feature and any timeline not exactly `PUBLIC` |
 | Research Papers | Local `GET /search`, `/papers/:id`, `/similar/:id`, `/hot`, `/sleepers`; public `/paths.json`; fallback `/data/hot.json`, `/data/sleepers.json` | `/rag/query`, PDF delivery, ClickHouse/SQL, ingest, enrichment, jobs, operator routes |
 | Setline | `GET /api/mcp/programme`, `/templates`, `/history`, `/history/:id`, `/progress` | `/api/app/state`, execution, programme changes, recommendations/actions, sync, import, account routes |
-| SWE Interview Prep | Public `GET /curriculum/catalog.json`, `/system-design/catalog.json`; OAuth `GET /api/mcp/daily`, `/api/mcp/progress` | progress writes, self-attested mastery, notes, review answers, chats, account records, code execution |
+| SWE Interview Prep | Public `GET /curriculum/catalog.json`, `/system-design/catalog.json`; OAuth `GET /api/mcp/daily`, `/api/mcp/progress`, `/api/mcp/verification` | progress writes, self-attested mastery, stored review answers, chats, account records, code execution |
 | SaaS Maker | `GET /api/ai` | private Fleet registry, operations, deployments, credentials, owner data |
 | Drank | `GET /api/dr?target=<validated-public-hostname>` | provider credentials, private targets, persistence, arbitrary provider calls |
 

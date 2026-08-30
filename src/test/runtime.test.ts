@@ -318,6 +318,8 @@ test("operation routes stay on their verified surfaces", () => {
   assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.daily!.auth, true);
   assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.progress!.path({}), "/api/mcp/progress");
   assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.progress!.auth, true);
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.verification!.path({}), "/api/mcp/verification");
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.verification!.auth, true);
   assert.equal(APP_DEFINITIONS["saas-maker"].operations.catalog!.path({}), "/api/ai");
   const normalizedDomain = APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("https://Example.com/path");
   assert.equal(APP_DEFINITIONS.drank.operations.rating!.path({ domain: normalizedDomain }), "/api/dr?target=example.com");
@@ -408,7 +410,7 @@ test("new public catalogs normalize only their approved collections", () => {
 
 });
 
-test("SWE Interview Prep preserves the product-owned daily and progress projections", () => {
+test("SWE Interview Prep preserves the product-owned daily, progress, and verification projections", () => {
   const app = APP_DEFINITIONS["swe-interview-prep"];
   const dailyPayload = {
     priority: { kind: "retention", concept: { id: "load-balancing" } },
@@ -417,6 +419,18 @@ test("SWE Interview Prep preserves the product-owned daily and progress projecti
   const progressPayload = {
     progress: { concepts: { mastered: 3, learning: 4, untouched: 5 } },
     trackingPolicy: { readOnly: true, masterySource: "product-evidence" },
+  };
+  const verificationPayload = {
+    state: "verification-required",
+    concept: { id: "load-balancing" },
+    questions: [
+      {
+        id: "check-load-balancing-mechanism",
+        category: "mechanism",
+        prompt: "Explain the mechanism.",
+      },
+    ],
+    completionPolicy: "Product evidence only.",
   };
   const daily = normalizeToolResult({
     app,
@@ -434,8 +448,18 @@ test("SWE Interview Prep preserves the product-owned daily and progress projecti
     args: {},
     sourceUrl: "https://learn.significanthobbies.com/api/mcp/progress",
   });
+  const verification = normalizeToolResult({
+    app,
+    toolName: "get_current_learning_check",
+    tool: app.tools.get_current_learning_check!,
+    payload: verificationPayload,
+    args: {},
+    sourceUrl: "https://learn.significanthobbies.com/api/mcp/verification",
+  });
   assert.deepEqual(daily.item, dailyPayload);
   assert.deepEqual(progress.item, progressPayload);
+  assert.deepEqual(verification.item, verificationPayload);
+  assert.equal(JSON.stringify(verification.item).includes('"answer"'), false);
 });
 
 test("new public catalog tools fail closed when their required collection disappears", () => {

@@ -42,7 +42,7 @@ activated. Do not publish or submit them.
 | High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | One UTC day of published signals plus exact per-signal evidence |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
-| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | OAuth, `swe-interview-prep.read` | Product-computed daily priority and progress, plus published curriculum catalogs |
+| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | OAuth, `swe-interview-prep.read` | Daily/on-demand priority, progress, answer-free understanding checks, exact product links, and published curriculum catalogs |
 
 ### Planned hostnames (no DNS yet)
 

@@ -26,7 +26,7 @@ other capabilities outside the read-only publication boundary.
 | High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence, and production now serves the same 2 (`get_daily_signals`, `get_signal_evidence`) since the reduction shipped in `ef11d519`. Its live dataset is currently empty; that is tracked separately |
 | Significant Hobbies | 5 | Manual production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Manual production monitor enforces exact live catalog equality |
-| SWE Interview Prep | 7 | Gateway and product tests enforce the five public curriculum tools plus two OAuth, user-scoped learning projections; live OAuth metadata and unauthenticated fail-closed checks pass, while authenticated ChatGPT discovery remains the final gate |
+| SWE Interview Prep | 8 | Gateway and product tests enforce the five public curriculum tools plus three OAuth, user-scoped learning projections; the understanding check exposes prompts without answers and preserves product-owned mastery |
 | SaaS Maker | 4 | Gateway tests enforce exact catalog equality; production activation pending |
 | Drank | 1 | Gateway tests enforce exact catalog equality; production activation pending |
 
@@ -40,6 +40,7 @@ The private expected catalogs are:
   `get_manga_detail`, `get_anime_stats`, `get_random_anime`, `list_watchlist`,
   `list_manga_watchlist`, `list_watchlist_tags`, `get_watchlist_enriched`.
 - SWE Interview Prep: `get_daily_learning_priority`, `get_learning_progress`,
+  `get_current_learning_check`,
   plus the five public curriculum and system-design tools.
 
 The public Anime List catalog is exactly `search_anime`, `search_manga`,
@@ -67,9 +68,9 @@ The following surfaces remain unavailable by design:
   administrative state.
 - Research Papers full-corpus search, similarity, paid RAG, PDFs, ingest,
   enrichment, databases, and operator controls.
-- SWE Interview Prep progress writes, self-attested mastery, notes, review
-  answers, chats, account records, and code execution. Its two personal tools
-  expose only product-computed learning projections.
+- SWE Interview Prep progress writes, self-attested mastery, notes, stored
+  review answers, chats, account records, and code execution. Its three
+  personal tools expose only product-computed learning projections.
 - SaaS Maker internal registry, operations, deployments, credentials, and
   owner-only data.
 - Drank provider credentials, private targets, history, and arbitrary provider

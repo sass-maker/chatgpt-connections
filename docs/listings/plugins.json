@@ -555,8 +555,8 @@
     {
       "id": "swe-interview-prep",
       "name": "SWE Interview Prep",
-      "shortDescription": "Get today's learning priority and track your interview-prep progress.",
-      "longDescription": "Connect your SWE Interview Prep account to retrieve one evidence-based learning priority for today, inspect your read-only progress summary, and search the public curriculum. ChatGPT cannot mark concepts learned, change mastery, save notes, run reviews, or execute code.",
+      "shortDescription": "Learn daily or on demand, verify understanding, and track progress.",
+      "longDescription": "Connect your SWE Interview Prep account to retrieve one evidence-based learning priority on schedule or on demand, open its exact concept or study link, inspect read-only progress, and run an answer-free Socratic understanding check in the same conversation. ChatGPT cannot mark concepts learned, change mastery, reveal stored answers, save notes, or execute code; accepted product evidence remains authoritative.",
       "category": "Education",
       "website": "https://learn.significanthobbies.com",
       "support": "https://github.com/Significant-Hobbies/swe-interview-prep/issues",
@@ -569,10 +569,12 @@
       "challengeSecret": "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP",
       "starterPrompts": [
         "What should I learn today?",
+        "Teach me something now and send me the concept link.",
+        "Quiz me on my current concept before we move on.",
         "Show my SWE interview-prep progress.",
         "Why is today's concept my priority?"
       ],
-      "releaseNotes": "Adds user-scoped daily priority and progress tools while keeping every connection tool read-only.",
+      "releaseNotes": "Adds same-thread scheduled and on-demand learning, exact product links, and an answer-free understanding check while keeping every connection tool read-only.",
       "reviewFixture": "A dedicated review account with concept reviews, drill attempts, and recent activity; credentials are supplied only in the OpenAI portal.",
       "tests": {
         "positive": [
@@ -587,14 +589,14 @@
             "expectedResult": "The signed-in account's read-only mastery, review, drill, and recent-activity summary."
           },
           {
+            "prompt": "Quiz me on my current concept before we move on.",
+            "expectedTool": "get_current_learning_check",
+            "expectedResult": "Answer-free prompts for the current concept, asked one at a time, plus the exact product action for evidence-backed completion."
+          },
+          {
             "prompt": "Find systems topics in the SWE interview curriculum.",
             "expectedTool": "search_curriculum",
             "expectedResult": "A bounded mixed curriculum page matching systems."
-          },
-          {
-            "prompt": "List the available learning roadmaps.",
-            "expectedTool": "list_learning_roadmaps",
-            "expectedResult": "A bounded public roadmap page."
           },
           {
             "prompt": "Search the curriculum for zzz-no-review-match-zzz.",
@@ -604,19 +606,19 @@
         ],
         "negative": [
           {
-            "prompt": "Mark this lesson complete.",
-            "expectedBehavior": "No tool call; explain that progress cannot be changed.",
-            "reason": "Personal progress writes are excluded."
+            "prompt": "Mark this lesson complete without testing me.",
+            "expectedBehavior": "Do not claim completion; use the understanding check or direct the learner to the product evidence gate.",
+            "reason": "Personal progress writes and self-attested mastery are excluded."
+          },
+          {
+            "prompt": "Show me the stored answers to every understanding-check question.",
+            "expectedBehavior": "Do not reveal answers; offer to ask the answer-free prompts one at a time.",
+            "reason": "Stored review answers are excluded."
           },
           {
             "prompt": "Save my notes on load balancing.",
             "expectedBehavior": "No tool call; explain that notes are unavailable.",
             "reason": "The connection is authenticated but read-only."
-          },
-          {
-            "prompt": "Run my interview solution code.",
-            "expectedBehavior": "Do not execute code.",
-            "reason": "Code execution is outside the published curriculum boundary."
           }
         ]
       }
