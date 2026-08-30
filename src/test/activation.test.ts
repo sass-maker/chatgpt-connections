@@ -113,6 +113,7 @@ test("activation verifier proves Auth0 metadata, JWKS, and every exact private r
     { id: "setline", path: "/setline/mcp", scope: "setline.read" },
     { id: "personal-apps", path: "/personal-apps/mcp", scope: "personal-apps.read" },
     { id: "anime-list", path: "/anime-list/mcp", scope: "anime-list.read" },
+    { id: "swe-interview-prep", path: "/swe-interview-prep/mcp", scope: "swe-interview-prep.read" },
   ]);
   assert.deepEqual(receipt.manualGates, MANUAL_ACTIVATION_GATES);
   assert.equal(seen.length, PRIVATE_HOSTED_PATHS.length + 3);
@@ -137,14 +138,16 @@ test("activation verifier proves each published private plugin on its branded ho
     "https://reader-mcp.significanthobbies.com",
     "https://calorie-mcp.significanthobbies.com",
     "https://anime-mcp.significanthobbies.com",
+    "https://learn-mcp.significanthobbies.com",
   ]);
   assert.deepEqual(receipt.resources.map(({ id, origin }) => ({ id, origin })), [
     { id: "reader", origin: "https://reader-mcp.significanthobbies.com" },
     { id: "calorie", origin: "https://calorie-mcp.significanthobbies.com" },
     { id: "anime-list", origin: "https://anime-mcp.significanthobbies.com" },
+    { id: "swe-interview-prep", origin: "https://learn-mcp.significanthobbies.com" },
   ]);
   assert.equal(receipt.resources.some(({ id }) => id === "setline"), false);
-  assert.equal(seen.length, 8);
+  assert.equal(seen.length, 10);
 });
 
 test("activation verifier rejects non-Auth0 domains and malformed gateway origins before fetching", async () => {

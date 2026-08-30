@@ -125,16 +125,6 @@ const PUBLIC_EVALUATIONS: Readonly<Record<string, PublicEvaluationDefinition>> =
     ],
     negativeTools: ["search_private_corpus", "download_pdf", "ingest_paper"],
   },
-  "swe-interview-prep": {
-    positive: [
-      { tool: "search_curriculum", arguments: { q: "systems", limit: 1, offset: 0 }, shape: "page" },
-      { tool: "get_curriculum_item", arguments: { kind: "concept", id: "load-balancing" }, shape: "item" },
-      { tool: "list_learning_roadmaps", arguments: { limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_system_design_cases", arguments: { limit: 1, offset: 0 }, shape: "page" },
-      { tool: "search_curriculum", arguments: { q: "zzz-no-review-match-zzz", limit: 1, offset: 0 }, shape: "empty-page" },
-    ],
-    negativeTools: ["update_progress", "save_notes", "run_interview_code"],
-  },
   "saas-maker": {
     positive: [
       { tool: "search_public_products", arguments: { q: "CodeVetter", limit: 1, offset: 0 }, shape: "page" },
@@ -407,7 +397,7 @@ export async function runPublicSubmissionEvaluations(
     const route = hostedRoute(url.pathname, url.hostname);
     return options.includePrepared || route?.productionStatus !== "prepared";
   });
-  const expectedListingCount = options.includePrepared ? 8 : 4;
+  const expectedListingCount = options.includePrepared ? 7 : 4;
   if (listings.length !== expectedListingCount) throw new EvaluationError("public_listing_count_invalid");
   const nested = await Promise.all(listings.map(async (listing, pluginIndex) => {
     const definition = PUBLIC_EVALUATIONS[listing.id];

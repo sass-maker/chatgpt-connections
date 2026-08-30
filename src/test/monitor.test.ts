@@ -138,14 +138,14 @@ test("production monitor retains only redacted contract evidence", async () => {
     now: () => new Date("2026-08-12T00:00:00.000Z"),
   });
   assert.equal(receipt.ok, true);
-  assert.deepEqual(receipt.summary, { passed: 70, failed: 0, skipped: 0, total: 70 });
+  assert.deepEqual(receipt.summary, { passed: 68, failed: 0, skipped: 0, total: 68 });
   assert.equal(receipt.checkedAt, "2026-08-12T00:00:00.000Z");
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("must-never-enter-receipt"), false);
   assert.equal(serialized.includes("password"), false);
-  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 8);
-  assert.equal(receipt.checks.filter(({ id }) => id === "pagination").length, 7);
-  assert.equal(receipt.checks.filter(({ id }) => id === "oauth-resource").length, 3);
+  assert.equal(receipt.checks.filter(({ id }) => id === "representative-read").length, 7);
+  assert.equal(receipt.checks.filter(({ id }) => id === "pagination").length, 6);
+  assert.equal(receipt.checks.filter(({ id }) => id === "oauth-resource").length, 4);
   assert.equal(receipt.checks.filter(({ id }) => id === "host-isolation").length, 11);
 });
 

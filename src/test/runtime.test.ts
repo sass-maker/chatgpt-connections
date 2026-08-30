@@ -296,7 +296,7 @@ test("detail selection uses an exact configured identifier", () => {
   );
 });
 
-test("public operation routes stay on their verified anonymous surfaces", () => {
+test("operation routes stay on their verified surfaces", () => {
   const daily = APP_DEFINITIONS["high-signal"].operations.daily!;
   const evidence = APP_DEFINITIONS["high-signal"].operations.evidence!;
   assert.equal(daily.baseUrl, "https://api.highsignal.app");
@@ -314,6 +314,10 @@ test("public operation routes stay on their verified anonymous surfaces", () => 
   });
   assert.equal(new URL(readerSearch, "https://reader.example").searchParams.get("projectId"), "owner_default");
   assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.curriculum!.path({}), "/curriculum/catalog.json");
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.daily!.path({}), "/api/mcp/daily");
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.daily!.auth, true);
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.progress!.path({}), "/api/mcp/progress");
+  assert.equal(APP_DEFINITIONS["swe-interview-prep"].operations.progress!.auth, true);
   assert.equal(APP_DEFINITIONS["saas-maker"].operations.catalog!.path({}), "/api/ai");
   const normalizedDomain = APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("https://Example.com/path");
   assert.equal(APP_DEFINITIONS.drank.operations.rating!.path({ domain: normalizedDomain }), "/api/dr?target=example.com");
@@ -402,6 +406,36 @@ test("new public catalogs normalize only their approved collections", () => {
   });
   assert.deepEqual(curriculum.items?.map(({ id }) => id), ["load-balancing"]);
 
+});
+
+test("SWE Interview Prep preserves the product-owned daily and progress projections", () => {
+  const app = APP_DEFINITIONS["swe-interview-prep"];
+  const dailyPayload = {
+    priority: { kind: "retention", concept: { id: "load-balancing" } },
+    trackingPolicy: { readOnly: true, masterySource: "product-evidence" },
+  };
+  const progressPayload = {
+    progress: { concepts: { mastered: 3, learning: 4, untouched: 5 } },
+    trackingPolicy: { readOnly: true, masterySource: "product-evidence" },
+  };
+  const daily = normalizeToolResult({
+    app,
+    toolName: "get_daily_learning_priority",
+    tool: app.tools.get_daily_learning_priority!,
+    payload: dailyPayload,
+    args: {},
+    sourceUrl: "https://learn.significanthobbies.com/api/mcp/daily",
+  });
+  const progress = normalizeToolResult({
+    app,
+    toolName: "get_learning_progress",
+    tool: app.tools.get_learning_progress!,
+    payload: progressPayload,
+    args: {},
+    sourceUrl: "https://learn.significanthobbies.com/api/mcp/progress",
+  });
+  assert.deepEqual(daily.item, dailyPayload);
+  assert.deepEqual(progress.item, progressPayload);
 });
 
 test("new public catalog tools fail closed when their required collection disappears", () => {

@@ -903,16 +903,36 @@ const curriculumKinds = {
 const sweInterviewPrep: AppDefinition = {
   id: "swe-interview-prep",
   name: "SWE Interview Prep",
-  serverName: "swe-interview-prep-public-readonly",
+  serverName: "swe-interview-prep-readonly",
   baseUrl: "https://learn.significanthobbies.com",
   baseUrlEnv: "SWE_INTERVIEW_PREP_API_URL",
   instructions:
-    "Read-only access to the public SWE Interview Prep curriculum. Never change progress, notes, reviews, plans, chats, code, or account data.",
+    "Read-only access to the public SWE Interview Prep curriculum and the signed-in learner's daily priority and progress. Treat progress as evidence, not self-attested mastery. Never change progress, notes, reviews, plans, chats, code, or account data.",
   operations: {
     curriculum: { path: () => "/curriculum/catalog.json", mode: "public-static" },
     cases: { path: () => "/system-design/catalog.json", mode: "public-static" },
+    daily: { path: () => "/api/mcp/daily", auth: true, mode: "user-api" },
+    progress: { path: () => "/api/mcp/progress", auth: true, mode: "user-api" },
   },
   tools: {
+    get_daily_learning_priority: {
+      title: "Get today's learning priority",
+      description:
+        "Retrieve the signed-in learner's single evidence-based priority for today, with rationale and a deep link back to the product.",
+      inputSchema: {},
+      operation: "daily",
+      mode: "user-api",
+      detail: true,
+    },
+    get_learning_progress: {
+      title: "Get learning progress",
+      description:
+        "Retrieve the signed-in learner's read-only mastery, review, drill, and recent-activity summary.",
+      inputSchema: {},
+      operation: "progress",
+      mode: "user-api",
+      detail: true,
+    },
     search_curriculum: {
       title: "Search curriculum",
       description: "Search public tracks, concepts, roadmaps, and system-design cases.",

@@ -199,9 +199,12 @@ export const HOSTED_ROUTES: Readonly<Record<string, HostedRouteDefinition>> = Ob
   "/swe-interview-prep/mcp": {
     id: "swe-interview-prep",
     kind: "adapter",
-    audience: "public",
+    audience: "personal",
     hosts: ["learn-mcp.significanthobbies.com"],
     challengeSecret: "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP",
+    authMode: "federated",
+    oauthAudience: "https://mcp.significanthobbies.com/swe-interview-prep/mcp",
+    scope: "swe-interview-prep.read",
     productionStatus: "prepared",
     app: APP_DEFINITIONS["swe-interview-prep"],
   },

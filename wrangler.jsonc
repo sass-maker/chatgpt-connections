@@ -13,7 +13,8 @@
     { "pattern": "hobbies-mcp.significanthobbies.com", "custom_domain": true },
     { "pattern": "mcp.highsignal.app", "custom_domain": true },
     { "pattern": "papers-mcp.highsignal.app", "custom_domain": true },
-    { "pattern": "starboard-mcp.codevetter.com", "custom_domain": true }
+    { "pattern": "starboard-mcp.codevetter.com", "custom_domain": true },
+    { "pattern": "learn-mcp.significanthobbies.com", "custom_domain": true }
   ],
   "secrets": {
     "required": [

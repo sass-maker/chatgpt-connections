@@ -26,7 +26,7 @@ other capabilities outside the read-only publication boundary.
 | High Signal | 2 | Local contract is intentionally reduced to daily signals plus exact signal evidence, and production now serves the same 2 (`get_daily_signals`, `get_signal_evidence`) since the reduction shipped in `ef11d519`. Its live dataset is currently empty; that is tracked separately |
 | Significant Hobbies | 5 | Manual production monitor enforces exact live catalog equality |
 | Research Papers | 3 | Manual production monitor enforces exact live catalog equality |
-| SWE Interview Prep | 5 | Gateway tests enforce exact catalog equality; production activation pending |
+| SWE Interview Prep | 7 | Gateway and product tests enforce the five public curriculum tools plus two OAuth, user-scoped learning projections; production activation pending |
 | SaaS Maker | 4 | Gateway tests enforce exact catalog equality; production activation pending |
 | Drank | 1 | Gateway tests enforce exact catalog equality; production activation pending |
 
@@ -39,6 +39,8 @@ The private expected catalogs are:
 - My Anime List: `search_anime`, `search_manga`, `get_anime_detail`,
   `get_manga_detail`, `get_anime_stats`, `get_random_anime`, `list_watchlist`,
   `list_manga_watchlist`, `list_watchlist_tags`, `get_watchlist_enriched`.
+- SWE Interview Prep: `get_daily_learning_priority`, `get_learning_progress`,
+  plus the five public curriculum and system-design tools.
 
 The public Anime List catalog is exactly `search_anime`, `search_manga`,
 `get_anime_detail`, `get_manga_detail`, `get_anime_stats`, and
@@ -65,8 +67,9 @@ The following surfaces remain unavailable by design:
   administrative state.
 - Research Papers full-corpus search, similarity, paid RAG, PDFs, ingest,
   enrichment, databases, and operator controls.
-- SWE Interview Prep progress, notes, reviews, chats, accounts, and code
-  execution.
+- SWE Interview Prep progress writes, self-attested mastery, notes, review
+  answers, chats, account records, and code execution. Its two personal tools
+  expose only product-computed learning projections.
 - SaaS Maker internal registry, operations, deployments, credentials, and
   owner-only data.
 - Drank provider credentials, private targets, history, and arbitrary provider

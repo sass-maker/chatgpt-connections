@@ -24,7 +24,7 @@ const REPRESENTATIVE_CALLS: Readonly<Record<string, RepresentativeCall>> = Objec
   "significant-hobbies": { name: "search_hobbies", arguments: { q: "astronomy", limit: 1, offset: 0 } },
   "research-papers": { name: "list_hot_papers", arguments: { limit: 1, offset: 0 } },
   "anime-list-public": { name: "search_anime", arguments: { pagesize: 1, offset: 0 } },
-  "swe-interview-prep": { name: "search_curriculum", arguments: { q: "systems", limit: 1, offset: 0 } },
+  "swe-interview-prep": { name: "get_daily_learning_priority", arguments: {} },
   "saas-maker": { name: "search_public_products", arguments: { q: "CodeVetter", limit: 1, offset: 0 } },
   drank: { name: "get_domain_rating", arguments: { domain: "example.com" } },
 });

@@ -87,7 +87,7 @@ const evaluationFetch: typeof fetch = async (input, init) => {
   });
 };
 
-test("public submission evaluations run all 64 cases and retain only contract evidence", async () => {
+test("public submission evaluations run all 56 cases and retain only contract evidence", async () => {
   const receipt = await runPublicSubmissionEvaluations({
     fetchImpl: evaluationFetch,
     includePrepared: true,
@@ -95,10 +95,10 @@ test("public submission evaluations run all 64 cases and retain only contract ev
   });
   assert.equal(receipt.ok, true);
   assert.equal(receipt.scope, "public_protocol");
-  assert.deepEqual(receipt.summary, { passed: 64, failed: 0, total: 64 });
+  assert.deepEqual(receipt.summary, { passed: 56, failed: 0, total: 56 });
   assert.deepEqual(receipt.manualGates, ["private_authenticated_evaluations", "chatgpt_model_behavior"]);
-  assert.equal(receipt.checks.filter(({ kind }) => kind === "positive").length, 40);
-  assert.equal(receipt.checks.filter(({ kind }) => kind === "negative").length, 24);
+  assert.equal(receipt.checks.filter(({ kind }) => kind === "positive").length, 35);
+  assert.equal(receipt.checks.filter(({ kind }) => kind === "negative").length, 21);
   const serialized = JSON.stringify(receipt);
   assert.equal(serialized.includes("must-never-enter-receipt"), false);
   assert.equal(serialized.includes("password"), false);

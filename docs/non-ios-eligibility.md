@@ -17,7 +17,7 @@ appropriate for the intended audience. Marketing pages alone do not qualify.
 | High Signal | Public | Published signal, brief, and hit-rate files | Hosted |
 | Significant Hobbies | Public | Public taxonomy, experiences, and PUBLIC timelines | Hosted |
 | Research Papers | Public | Approved public exports | Hosted; PDFs, ingest, and private corpus excluded |
-| SWE Interview Prep | Public | Curriculum and system-design catalog JSON | Added; personal progress and notes excluded |
+| SWE Interview Prep | Personal | Federated learning projections with `swe-interview-prep.read`, plus public curriculum catalogs | Added; evidence and progress are read-only; notes and mastery writes excluded |
 | SaaS Maker | Public | Privacy-checked `/api/ai` projection | Added; internal Fleet registry and operations excluded |
 | Drank | Public | Validated `/api/dr?target=` lookup | Added; provider credential stays in the product Worker |
 

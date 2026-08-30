@@ -555,8 +555,8 @@
     {
       "id": "swe-interview-prep",
       "name": "SWE Interview Prep",
-      "shortDescription": "Search a public software-engineering interview curriculum.",
-      "longDescription": "Search public concepts, tracks, roadmaps, and system-design cases from SWE Interview Prep and inspect individual curriculum records. Progress, notes, reviews, chats, account data, and code execution are unavailable.",
+      "shortDescription": "Get today's learning priority and track your interview-prep progress.",
+      "longDescription": "Connect your SWE Interview Prep account to retrieve one evidence-based learning priority for today, inspect your read-only progress summary, and search the public curriculum. ChatGPT cannot mark concepts learned, change mastery, save notes, run reviews, or execute code.",
       "category": "Education",
       "website": "https://learn.significanthobbies.com",
       "support": "https://github.com/Significant-Hobbies/swe-interview-prep/issues",
@@ -564,36 +564,37 @@
       "terms": "https://significanthobbies.com/terms",
       "logo": "assets/swe-interview-prep.png",
       "mcpUrl": "https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp",
-      "authentication": "None",
+      "authentication": "OAuth",
+      "oauthResource": "https://mcp.significanthobbies.com/swe-interview-prep/mcp",
       "challengeSecret": "OPENAI_CHALLENGE_SWE_INTERVIEW_PREP",
       "starterPrompts": [
-        "Find systems topics in the SWE interview curriculum.",
-        "Show the load-balancing concept.",
-        "List the available learning roadmaps."
+        "What should I learn today?",
+        "Show my SWE interview-prep progress.",
+        "Why is today's concept my priority?"
       ],
-      "releaseNotes": "Initial public submission of SWE Interview Prep's published curriculum MCP tools.",
-      "reviewFixture": "No account required; tests use the live public curriculum and system-design catalogs.",
+      "releaseNotes": "Adds user-scoped daily priority and progress tools while keeping every connection tool read-only.",
+      "reviewFixture": "A dedicated review account with concept reviews, drill attempts, and recent activity; credentials are supplied only in the OpenAI portal.",
       "tests": {
         "positive": [
+          {
+            "prompt": "What should I learn today?",
+            "expectedTool": "get_daily_learning_priority",
+            "expectedResult": "One product-owned recovery, retention, or progression priority with rationale, evidence, and a deep link."
+          },
+          {
+            "prompt": "Show my SWE interview-prep progress.",
+            "expectedTool": "get_learning_progress",
+            "expectedResult": "The signed-in account's read-only mastery, review, drill, and recent-activity summary."
+          },
           {
             "prompt": "Find systems topics in the SWE interview curriculum.",
             "expectedTool": "search_curriculum",
             "expectedResult": "A bounded mixed curriculum page matching systems."
           },
           {
-            "prompt": "Show the load-balancing concept.",
-            "expectedTool": "get_curriculum_item",
-            "expectedResult": "The exact public concept record identified by load-balancing."
-          },
-          {
             "prompt": "List the available learning roadmaps.",
             "expectedTool": "list_learning_roadmaps",
             "expectedResult": "A bounded public roadmap page."
-          },
-          {
-            "prompt": "Show an available system-design case.",
-            "expectedTool": "search_system_design_cases",
-            "expectedResult": "A bounded page of public system-design cases."
           },
           {
             "prompt": "Search the curriculum for zzz-no-review-match-zzz.",
@@ -610,7 +611,7 @@
           {
             "prompt": "Save my notes on load balancing.",
             "expectedBehavior": "No tool call; explain that notes are unavailable.",
-            "reason": "The connection is anonymous and read-only."
+            "reason": "The connection is authenticated but read-only."
           },
           {
             "prompt": "Run my interview solution code.",

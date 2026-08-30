@@ -51,15 +51,16 @@ resolve and are not registered in `wrangler.jsonc`.
 | Product | Planned MCP URL | ChatGPT auth | Upstream boundary |
 | --- | --- | --- | --- |
 | Anime List | `https://catalog-anime-mcp.significanthobbies.com/anime-list-public/mcp` | None | Prepared anonymous proxy exposing only six public catalog/discovery tools |
-| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | None | Published curriculum and system-design catalogs |
+| SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | OAuth, `swe-interview-prep.read` | Product-computed daily priority and progress, plus published curriculum catalogs |
 | SaaS Maker | `https://mcp.sassmaker.com/saas-maker/mcp` | None | Privacy-checked public `/api/ai` portfolio projection |
 | Drank | `https://domains-mcp.sassmaker.com/drank/mcp` | None | Live rating for one validated public hostname |
 | Setline | `https://setline-mcp.significanthobbies.com/setline/mcp` | Owner token | Owner-only Setline projection |
 | Personal Apps | `https://personal-apps-mcp.significanthobbies.com/personal-apps/mcp` | OAuth, `personal-apps.read` | Prepared native personal-platform proxy |
 
 `mcp.significanthobbies.com` also has no DNS record, and that is correct: it is
-only the immutable Auth0 audience identifier for Reader, Calorie, and Anime
-List. It is advertised in protected-resource metadata and is never fetched.
+only the immutable Auth0 audience identifier for Reader, Calorie, Anime List,
+and SWE Interview Prep. It is advertised in protected-resource metadata and is
+never fetched.
 
 Setline remains available only on the compatibility endpoint and is not one of
 the eleven listing packages. It retains the existing owner-only token bridge
@@ -75,7 +76,8 @@ access/refresh tokens, rotation, and revocation. The Worker is an OAuth
 resource server: it publishes route-specific protected-resource metadata,
 proxies Auth0 authorization-server discovery for older clients, validates
 Auth0 JWTs with `jose` against Auth0's remote JWKS, and forwards only a verified
-Reader, Calorie, or Anime List caller token to that matching product.
+Reader, Calorie, Anime List, or SWE Interview Prep caller token to that matching
+product.
 
 Every federated private request must have the exact Auth0 issuer, the route's
 fixed canonical product resource in `aud`, an RS256 signature, a lifetime no
@@ -131,7 +133,7 @@ and every other hosted product must not be added to Codex.
 | High Signal | Public surface live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Significant Hobbies | Hobbies, experiences, and public timelines live | Anonymous branded route live | No auth | OpenAI portal draft/submission pending |
 | Research Papers | Public exports live | Export-only branded route live | No auth | OpenAI portal draft/submission pending |
-| SWE Interview Prep | Public catalogs live | Gateway route implemented; not deployed | No auth | Activation pending |
+| SWE Interview Prep | Public catalogs and private projections implemented | OAuth gateway route implemented; not deployed | `swe-interview-prep.read` contract ready | Activation pending |
 | SaaS Maker | Public agent projection live | Gateway route implemented; not deployed | No auth | Activation pending |
 | Drank | Public validated lookup live | Gateway route implemented; not deployed | No auth | Activation pending |
 

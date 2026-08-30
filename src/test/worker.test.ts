@@ -121,6 +121,12 @@ const routeFetch: typeof fetch = async (input, init) => {
   if (request.url === "https://personal-platform.sarthakagrawal927.workers.dev/mcp") {
     return nativeMcpResponse(request, "significant-hobbies-personal-apps");
   }
+  if (request.url === "https://learn.significanthobbies.com/api/mcp/daily") {
+    return Response.json({ priority: { kind: "retention", concept: { id: "load-balancing" } } });
+  }
+  if (request.url === "https://learn.significanthobbies.com/api/mcp/progress") {
+    return Response.json({ progress: { concepts: { mastered: 3 } } });
+  }
   return Response.json({ items: [] });
 };
 
@@ -289,6 +295,37 @@ test("private OAuth tokens remain isolated under concurrent calls and propagate 
   assert.equal(bodies[1]!.includes("calorie-result"), true);
   assert.equal(bodies[1]!.includes("reader-result"), false);
   assert.equal(bodies.some((body) => body.includes("oauthPayload") || body.includes("oauth-")), false);
+});
+
+test("SWE Interview Prep forwards the verified OAuth bearer only to private learning reads", async () => {
+  const seen: Array<{ authorization: string | null; url: string }> = [];
+  const response = await handleHostedRequest(
+    requestFor("/swe-interview-prep/mcp", {
+      jsonrpc: "2.0",
+      id: 9,
+      method: "tools/call",
+      params: { name: "get_daily_learning_priority", arguments: {} },
+    }),
+    async (input, init) => {
+      seen.push({
+        authorization: new Headers(init?.headers).get("authorization"),
+        url: String(input),
+      });
+      return Response.json({
+        priority: { kind: "retention", concept: { id: "load-balancing" } },
+        trackingPolicy: { readOnly: true },
+      });
+    },
+    authorizationFor("/swe-interview-prep/mcp"),
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(seen, [{
+    authorization: "Bearer sweinterviewprepHeader.oauthPayload.oauthSignature",
+    url: "https://learn.significanthobbies.com/api/mcp/daily",
+  }]);
+  const body = JSON.stringify(await json(response));
+  assert.equal(body.includes("load-balancing"), true);
+  assert.equal(body.includes("oauthPayload"), false);
 });
 
 test("Anime List proxy fixes the upstream URL and forwards the verified OAuth bearer", async () => {
