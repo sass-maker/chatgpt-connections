@@ -478,7 +478,7 @@ const highSignal: AppDefinition = {
   baseUrl: "https://highsignal.app",
   baseUrlEnv: "HIGH_SIGNAL_API_URL",
   instructions:
-    "Read-only daily High Signal data. Retrieve one UTC day of published signals, then fetch one signal's linked evidence only when further proof is needed.",
+    "Read-only daily High Signal data. Retrieve one India Standard Time (IST) day of published signals, then fetch one signal's linked evidence only when further proof is needed.",
   operations: {
     brief: {
       baseUrl: "https://api.highsignal.app",
@@ -530,9 +530,9 @@ const highSignal: AppDefinition = {
     },
     get_daily_signals: {
       title: "Get daily signals",
-      description: "Retrieve High Signal's evidence-qualified published signals for one UTC day.",
+      description: "Retrieve High Signal's evidence-qualified published signals for one India Standard Time (IST) day.",
       inputSchema: {
-        date: date.optional().describe("Optional UTC date in YYYY-MM-DD format."),
+        date: date.optional().describe("Optional IST date in YYYY-MM-DD format."),
         limit: commonLimitInput,
         offset: commonOffsetInput,
       },
