@@ -480,6 +480,15 @@ const highSignal: AppDefinition = {
   instructions:
     "Read-only daily High Signal data. Retrieve one UTC day of published signals, then fetch one signal's linked evidence only when further proof is needed.",
   operations: {
+    brief: {
+      baseUrl: "https://api.highsignal.app",
+      path: (a) => queryPath("/brief/daily", { region: a.region }),
+    },
+    feed: { path: () => "/signals.json" },
+    trackRecord: {
+      baseUrl: "https://api.highsignal.app",
+      path: () => "/track-record?cohort=live",
+    },
     daily: {
       baseUrl: "https://api.highsignal.app",
       path: (a) =>
@@ -493,6 +502,32 @@ const highSignal: AppDefinition = {
     },
   },
   tools: {
+    // Keep installed connector schemas working when the preferred catalog changes.
+    get_daily_brief: {
+      title: "Get daily brief",
+      description: "Retrieve the current public Daily Brief, including its edition date and publication state.",
+      inputSchema: { region: boundedText.optional() },
+      operation: "brief", mode: "public-api", detail: true,
+    },
+    search_signals: {
+      title: "Search signals",
+      description: "Search the bounded recent public signal feed. Results retain their original publication dates.",
+      inputSchema: { q: optionalQuery, limit: commonLimitInput, offset: commonOffsetInput },
+      operation: "feed", mode: "public-api", collectionKeys: ["signals"],
+      requireCollection: true, localQuery: true,
+    },
+    get_signal: {
+      title: "Get signal",
+      description: "Retrieve an exact published signal from the bounded recent public feed.",
+      inputSchema: { slug }, operation: "feed", mode: "public-api", detail: true,
+      detailCollectionKeys: ["signals"], detailArgument: "slug", detailFields: ["slug"],
+    },
+    get_track_record: {
+      title: "Get track record",
+      description: "Retrieve bounded live prediction outcome buckets. Small resolved samples are not calibrated confidence evidence.",
+      inputSchema: { limit: commonLimitInput, offset: commonOffsetInput },
+      operation: "trackRecord", mode: "public-api", collectionKeys: ["buckets"], requireCollection: true,
+    },
     get_daily_signals: {
       title: "Get daily signals",
       description: "Retrieve High Signal's evidence-qualified published signals for one UTC day.",

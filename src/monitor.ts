@@ -20,7 +20,7 @@ interface PaginationCall extends RepresentativeCall {
 
 const REPRESENTATIVE_CALLS: Readonly<Record<string, RepresentativeCall>> = Object.freeze({
   "starboard": { name: "search_repositories", arguments: { q: "MCP", limit: 1, offset: 0 } },
-  "high-signal": { name: "get_daily_signals", arguments: { limit: 1, offset: 0 } },
+  "high-signal": { name: "get_daily_brief", arguments: {} },
   "significant-hobbies": { name: "search_hobbies", arguments: { q: "astronomy", limit: 1, offset: 0 } },
   "research-papers": { name: "list_hot_papers", arguments: { limit: 1, offset: 0 } },
   "anime-list-public": { name: "search_anime", arguments: { pagesize: 1, offset: 0 } },

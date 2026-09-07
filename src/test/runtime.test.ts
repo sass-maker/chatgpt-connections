@@ -328,9 +328,9 @@ test("operation routes stay on their verified surfaces", () => {
   assert.throws(() => APP_DEFINITIONS.drank.tools.get_domain_rating!.inputSchema.domain!.parse("[::1]"));
 });
 
-test("High Signal exposes exactly the daily signals and signal evidence tools", () => {
+test("High Signal preserves installed tool names alongside the daily and evidence tools", () => {
   const app = APP_DEFINITIONS["high-signal"];
-  assert.deepEqual(Object.keys(app.tools), ["get_daily_signals", "get_signal_evidence"]);
+  assert.deepEqual(Object.keys(app.tools), ["get_daily_brief", "search_signals", "get_signal", "get_track_record", "get_daily_signals", "get_signal_evidence"]);
 });
 
 test("High Signal daily tool normalizes one API-owned daily dump", () => {
@@ -498,3 +498,44 @@ for (const appId of Object.keys(APP_DEFINITIONS) as AppId[]) {
     }
   });
 }
+
+
+test("High Signal installed methods retain their original response semantics", () => {
+  const app = APP_DEFINITIONS["high-signal"];
+  const normalize = (toolName: string, payload: unknown, args: Record<string, unknown> = {}) =>
+    normalizeToolResult({ app, toolName, tool: app.tools[toolName]!, payload, args,
+      sourceUrl: "https://highsignal.app/signals.json" });
+  const brief = { editionDate: "2026-09-07", publishStatus: "pending", stocks: [] };
+  assert.equal(normalize("get_daily_brief", brief).item?.publishStatus, "pending");
+  const signals = [{ slug: "alpha", title: "Alpha" }, { slug: "beta", title: "Beta" }];
+  assert.deepEqual(normalize("search_signals", { signals }, { q: "beta" }).items?.map(x => x.slug), ["beta"]);
+  assert.equal(normalize("get_signal", { signals }, { slug: "alpha" }).item?.slug, "alpha");
+  assert.throws(() => normalize("get_signal", { signals }, { slug: "missing" }), /not found/i);
+  assert.equal(normalize("get_track_record", { buckets: [{ hit: 2, miss: 1 }] }).items?.[0]?.hit, 2);
+  assert.equal(app.operations.trackRecord!.path({}), "/track-record?cohort=live");
+});
+
+
+test("installed High Signal connector methods execute through MCP transport", async () => {
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const fetchImpl: typeof fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/brief/daily") return Response.json({ editionDate: "2026-09-07", stocks: [], publishStatus: "pending" });
+    if (url.pathname === "/signals.json") return Response.json({ signals: [{ slug: "alpha", title: "Alpha" }] });
+    if (url.pathname === "/track-record") return Response.json({ buckets: [{ hit: 2, miss: 1 }] });
+    return Response.json({ error: "unexpected_path" }, { status: 404 });
+  };
+  const server = buildServer("high-signal", fetchImpl);
+  const client = new Client({ name: "installed-connector-test", version: "1.0.0" });
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  try {
+    for (const [name, args] of [
+      ["get_daily_brief", {}], ["search_signals", { q: "alpha" }],
+      ["get_signal", { slug: "alpha" }], ["get_track_record", { limit: 3 }],
+    ] as const) {
+      const result = await client.callTool({ name, arguments: args });
+      assert.notEqual(result.isError, true, name);
+      assert.equal((result.structuredContent as { ok?: boolean } | undefined)?.ok, true, name);
+    }
+  } finally { await client.close(); await server.close(); }
+});

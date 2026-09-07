@@ -403,3 +403,18 @@ test("production monitor rejects pagination totals that change between pages", a
   );
   assert.equal(failure?.errorCode, "pagination_total_unstable");
 });
+
+
+test("production monitor fails if an installed High Signal brief method breaks", async () => {
+  const fetchImpl: typeof fetch = async (input, init) => {
+    const url = new URL(String(input));
+    const message = typeof init?.body === "string" ? JSON.parse(init.body) : {};
+    if (url.hostname === "mcp.highsignal.app" && message.method === "tools/call" && message.params?.name === "get_daily_brief") {
+      return responseJson({ jsonrpc: "2.0", id: message.id, result: { isError: true, content: [{ type: "text", text: "Tool not found" }] } });
+    }
+    return productionFetch(input, init);
+  };
+  const receipt = await runProductionMonitor({ fetchImpl });
+  assert.equal(receipt.ok, false);
+  assert.equal(receipt.checks.find(check => check.plugin === "high-signal" && check.id === "representative-read")?.status, "failed");
+});
