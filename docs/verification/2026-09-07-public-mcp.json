@@ -1,0 +1,532 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-07T09:38:00.366Z",
+  "ok": true,
+  "checks": [
+    {
+      "id": "health",
+      "plugin": "anime-list",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "anime-list",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/starboard/mcp"
+      }
+    },
+    {
+      "id": "oauth-challenge",
+      "plugin": "anime-list",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 401,
+        "resourceMetadata": "https://anime-mcp.significanthobbies.com/.well-known/oauth-protected-resource/anime-list/mcp",
+        "scope": "anime-list.read"
+      }
+    },
+    {
+      "id": "oauth-resource",
+      "plugin": "anime-list",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "resource": "https://mcp.significanthobbies.com/anime-list/mcp",
+        "scope": "anime-list.read",
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/"
+      }
+    },
+    {
+      "id": "oauth-server",
+      "plugin": "anime-list",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/",
+        "pkceS256": true,
+        "refreshTokens": true
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "calorie",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "calorie",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/anime-list/mcp"
+      }
+    },
+    {
+      "id": "oauth-challenge",
+      "plugin": "calorie",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 401,
+        "resourceMetadata": "https://calorie-mcp.significanthobbies.com/.well-known/oauth-protected-resource/calorie/mcp",
+        "scope": "calorie.read"
+      }
+    },
+    {
+      "id": "oauth-resource",
+      "plugin": "calorie",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "resource": "https://mcp.significanthobbies.com/calorie/mcp",
+        "scope": "calorie.read",
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/"
+      }
+    },
+    {
+      "id": "oauth-server",
+      "plugin": "calorie",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/",
+        "pkceS256": true,
+        "refreshTokens": true
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "high-signal",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "high-signal",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/significant-hobbies/mcp"
+      }
+    },
+    {
+      "id": "initialize",
+      "plugin": "high-signal",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "protocolVersion": "2025-11-25",
+        "serverName": "fleet-high-signal-readonly"
+      }
+    },
+    {
+      "id": "mutation-absence",
+      "plugin": "high-signal",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "rejected": true
+      }
+    },
+    {
+      "id": "pagination",
+      "plugin": "high-signal",
+      "status": "skipped",
+      "skipReason": "pagination_dataset_too_small"
+    },
+    {
+      "id": "representative-read",
+      "plugin": "high-signal",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "schemaVersion": "1",
+        "toolName": "get_daily_brief",
+        "itemCount": 1,
+        "truncated": false
+      }
+    },
+    {
+      "id": "tools-readonly",
+      "plugin": "high-signal",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolCount": 6,
+        "toolNames": [
+          "get_daily_brief",
+          "get_daily_signals",
+          "get_signal",
+          "get_signal_evidence",
+          "get_track_record",
+          "search_signals"
+        ]
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "reader",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "reader",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/calorie/mcp"
+      }
+    },
+    {
+      "id": "oauth-challenge",
+      "plugin": "reader",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 401,
+        "resourceMetadata": "https://reader-mcp.significanthobbies.com/.well-known/oauth-protected-resource/reader/mcp",
+        "scope": "reader.read"
+      }
+    },
+    {
+      "id": "oauth-resource",
+      "plugin": "reader",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "resource": "https://mcp.significanthobbies.com/reader/mcp",
+        "scope": "reader.read",
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/"
+      }
+    },
+    {
+      "id": "oauth-server",
+      "plugin": "reader",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/",
+        "pkceS256": true,
+        "refreshTokens": true
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/swe-interview-prep/mcp"
+      }
+    },
+    {
+      "id": "initialize",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "protocolVersion": "2025-11-25",
+        "serverName": "fleet-research-papers-public-readonly"
+      }
+    },
+    {
+      "id": "mutation-absence",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "rejected": true
+      }
+    },
+    {
+      "id": "pagination",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolName": "list_hot_papers",
+        "pageSize": 2,
+        "total": 100,
+        "pagesChecked": 3
+      }
+    },
+    {
+      "id": "representative-read",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "schemaVersion": "1",
+        "toolName": "list_hot_papers",
+        "itemCount": 1,
+        "truncated": true
+      }
+    },
+    {
+      "id": "tools-readonly",
+      "plugin": "research-papers",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolCount": 3,
+        "toolNames": [
+          "get_reading_path",
+          "list_hot_papers",
+          "list_sleepers"
+        ]
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/research-papers/mcp"
+      }
+    },
+    {
+      "id": "initialize",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "protocolVersion": "2025-11-25",
+        "serverName": "fleet-significant-hobbies-readonly"
+      }
+    },
+    {
+      "id": "mutation-absence",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "rejected": true
+      }
+    },
+    {
+      "id": "pagination",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolName": "search_public_timelines",
+        "pageSize": 2,
+        "total": 10,
+        "pagesChecked": 3
+      }
+    },
+    {
+      "id": "representative-read",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "schemaVersion": "1",
+        "toolName": "search_hobbies",
+        "itemCount": 1,
+        "truncated": false
+      }
+    },
+    {
+      "id": "tools-readonly",
+      "plugin": "significant-hobbies",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolCount": 5,
+        "toolNames": [
+          "get_experience",
+          "get_public_timeline",
+          "search_experiences",
+          "search_hobbies",
+          "search_public_timelines"
+        ]
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/high-signal/mcp"
+      }
+    },
+    {
+      "id": "initialize",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "protocolVersion": "2025-11-25",
+        "serverName": "fleet-starboard-readonly"
+      }
+    },
+    {
+      "id": "mutation-absence",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "rejected": true
+      }
+    },
+    {
+      "id": "pagination",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolName": "search_repositories",
+        "pageSize": 2,
+        "total": 14677,
+        "pagesChecked": 3
+      }
+    },
+    {
+      "id": "representative-read",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "schemaVersion": "1",
+        "toolName": "search_repositories",
+        "itemCount": 1,
+        "truncated": true
+      }
+    },
+    {
+      "id": "tools-readonly",
+      "plugin": "starboard",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "toolCount": 4,
+        "toolNames": [
+          "get_repository",
+          "inspect_tool_adoption",
+          "preview_project",
+          "search_repositories"
+        ]
+      }
+    },
+    {
+      "id": "health",
+      "plugin": "swe-interview-prep",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "service": "fleet-chatgpt-connections"
+      }
+    },
+    {
+      "id": "host-isolation",
+      "plugin": "swe-interview-prep",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 404,
+        "rejectedPath": "/reader/mcp"
+      }
+    },
+    {
+      "id": "oauth-challenge",
+      "plugin": "swe-interview-prep",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 401,
+        "resourceMetadata": "https://learn-mcp.significanthobbies.com/.well-known/oauth-protected-resource/swe-interview-prep/mcp",
+        "scope": "swe-interview-prep.read"
+      }
+    },
+    {
+      "id": "oauth-resource",
+      "plugin": "swe-interview-prep",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "resource": "https://mcp.significanthobbies.com/swe-interview-prep/mcp",
+        "scope": "swe-interview-prep.read",
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/"
+      }
+    },
+    {
+      "id": "oauth-server",
+      "plugin": "swe-interview-prep",
+      "status": "passed",
+      "evidence": {
+        "httpStatus": 200,
+        "issuer": "https://dev-0suel086hm1blvg7.us.auth0.com/",
+        "pkceS256": true,
+        "refreshTokens": true
+      }
+    }
+  ],
+  "summary": {
+    "passed": 47,
+    "failed": 0,
+    "skipped": 1,
+    "total": 48
+  },
+  "independentClient": {
+    "client": "@modelcontextprotocol/sdk Client + StreamableHTTPClientTransport",
+    "endpoint": "https://starboard-mcp.codevetter.com/starboard/mcp",
+    "initialize": "passed",
+    "toolsList": "passed",
+    "tool": "search_repositories",
+    "query": "sqlite",
+    "limit": 2,
+    "returned": 2,
+    "total": 145,
+    "nextOffset": 2,
+    "hasMore": true,
+    "publicResults": [
+      "https://github.com/sqlite/sqlite",
+      "https://github.com/asg017/sqlite-vec"
+    ],
+    "provenance": "https://starboard.codevetter.com/api/discover?q=sqlite&limit=2&offset=0",
+    "valueAssessment": "Useful bounded public repository discovery with descriptions and source links; numeric popularity remains an upstream snapshot."
+  }
+}

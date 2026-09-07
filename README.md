@@ -28,7 +28,7 @@ The compatibility workers.dev origin remains active. Public submissions use a
 different branded hostname for every plugin so OpenAI can verify and retain one
 independent domain challenge per submission.
 
-Seven hostnames resolve and serve traffic today. The remaining hostnames below
+Eight hostnames passed the live monitor on 2026-09-07. The remaining hostnames below
 are **planned names, not production URLs** — they have no DNS record and no
 entry in `wrangler.jsonc`, so they will not resolve until their route is
 activated. Do not publish or submit them.
@@ -38,7 +38,7 @@ activated. Do not publish or submit them.
 | Reader | `https://reader-mcp.significanthobbies.com/reader/mcp` | OAuth, `reader.read` | Reader verifies the caller token and resolves its Auth0 subject to that user's account |
 | Calorie | `https://calorie-mcp.significanthobbies.com/calorie/mcp` | OAuth, `calorie.read` | Calorie verifies the caller token and resolves its Auth0 subject to that user's account |
 | My Anime List | `https://anime-mcp.significanthobbies.com/anime-list/mcp` | OAuth, `anime-list.read` | Full native read catalog plus user-scoped watchlists |
-| Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs — **tool calls currently fail upstream**, see [Known outages](#known-outages) |
+| Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs; live tool calls and pagination verified 2026-09-07 |
 | High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | Daily signals and evidence, plus compatible brief/search/signal/ledger methods |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
@@ -239,45 +239,31 @@ pnpm monitor:production -- --output production-monitor-receipt.json
 
 ## Known outages
 
-### Starboard — public API unreachable (open, upstream)
+### Current public qualification — 2026-09-07
 
-Every Starboard tool returns `not_found`. The gateway adapter is correct and
-its four upstream paths still exist and are still deployed; the requests are
-being intercepted before they reach them.
+Fresh production monitoring passed 47 checks, failed zero and skipped one
+High Signal pagination check because the dataset is too small for three pages.
+Starboard's previously reported upstream outage is no longer reproducible:
+initialization, all four read-tool declarations, representative reads and
+three-page pagination passed against production.
 
-Starboard's Worker entry (`worker.mjs`) calls `handleAgentEdge(request)` before
-delegating to OpenNext. Starboard commit `4c67733` (2026-08-23, "Add Clarity,
-an OpenAPI spec, and Accept-aware caching") added a catch-all to
-`agent-edge.mjs`:
+An independent MCP SDK client connected to the branded Starboard endpoint and
+called `search_repositories` for `sqlite` with a limit of two. It returned
+`sqlite/sqlite` and `asg017/sqlite-vec`, descriptions, public repository links,
+a total of 145, and a continuation offset of two with upstream provenance.
+That is a useful public discovery flow. It does not establish the freshness of
+all repository metadata or qualify private account connections.
 
-```js
-// JSON error for unknown /api/* paths
-if (path.startsWith('/api/')) {
-  return jsonError(404, 'not_found', `Unknown API path: ${path}`, path);
-}
-```
+The redacted [verification receipt](docs/verification/2026-09-07-public-mcp.json)
+retains protocol outcomes and public identifiers. Research Papers and Significant
+Hobbies also passed representative reads and three-page pagination. High Signal
+returned a brief, but a small pagination dataset is not evidence of broad source
+coverage or a complete ingestion pipeline.
 
-`handleAgentEdge` returns early for `GET` and `HEAD` only, and only
-`/api/ai` is allow-listed above that branch. So every other `GET /api/*` path
-is answered with a 404 at the edge and never reaches the Next.js route
-handlers — including `/api/health`, which is unrelated to this gateway.
-
-The routes themselves are alive. `POST /api/discover` on production returns
-`405 Method Not Allowed` from the real Next.js handler, which proves the route
-is deployed and only the GET path is shadowed.
-
-The public API was neither moved nor retired, so this repository must not
-repoint the adapter — its paths are already the correct ones. The fix belongs
-in `Codevetter/starboard`: allow-list the real public API paths (or restrict
-the catch-all to paths the edge actually owns) in `agent-edge.mjs`. Starboard
-tool calls will start working again the moment that ships, with no change here.
-
-### High Signal — empty dataset (open, tracked separately)
-
-High Signal's tools respond correctly but `api.highsignal.app/data/daily`
-currently reports `signalCount: 0`, so reads return no rows. This is under
-separate investigation and is not addressed here. It is the reason the
-pagination check now skips small datasets rather than failing them.
+Remaining work is real ChatGPT installation/use, private OAuth consent and
+account isolation, refresh/revocation, and activation of the explicitly planned
+hostnames. Public metadata checks do not prove those flows. Task reconciliation
+found zero open issues; none were closed. These gates remain unfinished here.
 
 ## Submission evaluations
 
