@@ -39,7 +39,7 @@ activated. Do not publish or submit them.
 | Calorie | `https://calorie-mcp.significanthobbies.com/calorie/mcp` | OAuth, `calorie.read` | Calorie verifies the caller token and resolves its Auth0 subject to that user's account |
 | My Anime List | `https://anime-mcp.significanthobbies.com/anime-list/mcp` | OAuth, `anime-list.read` | Full native read catalog plus user-scoped watchlists |
 | Starboard | `https://starboard-mcp.codevetter.com/starboard/mcp` | None | Approved anonymous product APIs — **tool calls currently fail upstream**, see [Known outages](#known-outages) |
-| High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | One UTC day of published signals plus exact per-signal evidence |
+| High Signal | `https://mcp.highsignal.app/high-signal/mcp` | None | Daily signals and evidence, plus compatible brief/search/signal/ledger methods |
 | Significant Hobbies | `https://hobbies-mcp.significanthobbies.com/significant-hobbies/mcp` | None | Public hobby, experience, and PUBLIC-timeline projections only |
 | Research Papers | `https://papers-mcp.highsignal.app/research-papers/mcp` | None | Approved public hot, sleeper, and reading-path exports only |
 | SWE Interview Prep | `https://learn-mcp.significanthobbies.com/swe-interview-prep/mcp` | OAuth, `swe-interview-prep.read` | Daily/on-demand priority, progress, answer-free understanding checks, exact product links, and published curriculum catalogs |

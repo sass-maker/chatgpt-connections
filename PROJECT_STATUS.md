@@ -23,6 +23,13 @@ of scope.
 
 ## Timeline
 
+- 2026-09-07 — Restored the four installed High Signal methods alongside the
+  newer daily/evidence tools at runtime release `4a050690`. Exact-revision CI
+  and 107 tests passed; all four methods were called successfully through the
+  installed ChatGPT connector. The production monitor now calls the installed
+  brief method and passed 47 checks with one expected empty-dataset pagination
+  skip. High Signal owns publication-date and ingestion recovery separately.
+
 - 2026-08-30 — Deployed the user-scoped SWE Interview Prep connection at `learn-mcp.significanthobbies.com`. Its two private tools read the product-owned daily priority and progress projections through the exact `swe-interview-prep.read` Auth0 audience; five curriculum tools remain read-only. Product and gateway CI, Worker deployment, protected-resource metadata, host isolation, and unauthenticated fail-closed smokes pass. ChatGPT plugin creation and the authenticated owner smoke remain the final client gate.
 - 2026-08-22 — Made the repository public after a full 27-commit credential
   scan found only one deterministic test fixture and no tracked secret files or
