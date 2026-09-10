@@ -23,6 +23,10 @@ of scope.
 
 ## Timeline
 
+- 2026-09-10 — Public upstream reads now send a truthful gateway User-Agent
+  so Starboard can identify the client. Anonymous requests still send no
+  credentials; all 108 tests and type checks pass locally.
+
 - 2026-09-07 — Restored the four installed High Signal methods alongside the
   newer daily/evidence tools at runtime release `4a050690`. Exact-revision CI
   and 107 tests passed; all four methods were called successfully through the

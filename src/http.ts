@@ -92,7 +92,11 @@ export class ReadClient<Operations extends Record<string, ReadOperation<Record<s
     let lastError: ConnectionError | undefined;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        const headers = new Headers({ Accept: "application/json" });
+        const headers = new Headers({
+          Accept: "application/json",
+          // Identify the read-only gateway honestly to upstream bot guards.
+          "User-Agent": "Fleet-ChatGPT-Connections/1.0 (+https://github.com/sass-maker/chatgpt-connections)",
+        });
         if (operation.auth && this.#token) headers.set("Authorization", `Bearer ${this.#token}`);
         const response = await this.#fetch(url, {
           method: "GET",

@@ -68,6 +68,25 @@ test("read client rejects arbitrary origins and non-HTTPS remote bases", async (
   await assert.rejects(() => client.call("unsafe", {}), /invalid fixed path/i);
 });
 
+test("public reads identify the gateway without sending credentials", async () => {
+  const client = new ReadClient(
+    { detail: { path: () => "/api/repos/123?catalogOnly=1" } },
+    {
+      baseUrl: "https://starboard.codevetter.com",
+      fetchImpl: async (_input, init) => {
+        const headers = new Headers(init?.headers);
+        assert.equal(init?.method, "GET");
+        assert.equal(headers.get("authorization"), null);
+        const userAgent = headers.get("user-agent") ?? "";
+        if (!userAgent) return new Response("Automated clients are not permitted", { status: 403 });
+        assert.match(userAgent, /^Fleet-ChatGPT-Connections\/1\.0 /);
+        return Response.json({ repo: { id: 123 } });
+      },
+    },
+  );
+  assert.deepEqual(await client.call("detail", {}), { repo: { id: 123 } });
+});
+
 test("read client uses GET, applies bounded retry, and never exposes its token", async () => {
   const calls: Array<{ method: string | undefined; authorization: string | null; redirect: RequestRedirect | undefined }> = [];
   const fetchImpl: typeof fetch = async (_input, init) => {
