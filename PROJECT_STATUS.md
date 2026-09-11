@@ -23,6 +23,16 @@ of scope.
 
 ## Timeline
 
+- 2026-09-11 — Called all seven installed consumer connections directly.
+  High Signal, Research Papers, Significant Hobbies and Starboard returned
+  successful read-only responses. Reader, Calorie and Anime List returned
+  `UNAUTHORIZED` with `oauth_token_invalid_grant`, requiring reauthentication
+  of their saved app grants before owner-data reads can be verified. This is
+  a fresh consumer-session result, not evidence of an upstream product failure.
+  High Signal's successful connection still returns an empty current Brief;
+  useful publication remains owned by High Signal. No private record bodies
+  were retained and no product data was changed.
+
 - 2026-09-10 — Public upstream reads now send a truthful gateway User-Agent
   so Starboard can identify the client. Anonymous requests still send no
   credentials; all 108 tests and type checks pass locally.
