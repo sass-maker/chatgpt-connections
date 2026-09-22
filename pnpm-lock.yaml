@@ -11,6 +11,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 1.29.0
         version: 1.29.0(zod@4.4.3)
+      '@saas-maker/app-health':
+        specifier: https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz
+        version: https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz(express@5.2.1)(hono@4.13.1)
       jose:
         specifier: 6.2.8
         version: 6.2.8
@@ -438,6 +441,18 @@ packages:
 
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
+
+  '@saas-maker/app-health@https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz':
+    resolution: {tarball: https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz}
+    version: 0.4.0
+    peerDependencies:
+      express: '>=4.19.0 <6'
+      hono: '>=4.10.0 <5'
+    peerDependenciesMeta:
+      express:
+        optional: true
+      hono:
+        optional: true
 
   '@sindresorhus/is@7.2.0':
     resolution: {integrity: sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw==}
@@ -1171,6 +1186,11 @@ snapshots:
       supports-color: 10.2.2
 
   '@poppinss/exception@1.2.3': {}
+
+  '@saas-maker/app-health@https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz(express@5.2.1)(hono@4.13.1)':
+    optionalDependencies:
+      express: 5.2.1
+      hono: 4.13.1
 
   '@sindresorhus/is@7.2.0': {}
 
