@@ -1,3 +1,4 @@
+import { monitorAppHealthRequest } from "./app-health.js";
 import { hostedRoute, openAiChallengeSecret } from "./hosted.js";
 import {
   authorizeOAuthRequest,
@@ -44,29 +45,37 @@ function openAiChallenge(request: Request, env: HostedWorkerEnv): Response | und
   });
 }
 
+async function handleRequest(request: Request, env: HostedWorkerEnv): Promise<Response> {
+  const fetchImpl: typeof fetch = (input, init) => globalThis.fetch(input, init);
+  const challenge = openAiChallenge(request, env);
+  if (challenge) return challenge;
+  const metadata = await handleOAuthMetadataRequest(request, env, fetchImpl);
+  if (metadata) return metadata;
+
+  const url = new URL(request.url);
+  const route = hostedRoute(url.pathname, url.hostname);
+  if (!route || route.audience === "public") return handleHostedRequest(request, fetchImpl);
+
+  const authorization = await authorizeOAuthRequest(request, route, env);
+  if (authorization.status === "unavailable" || authorization.status === "misconfigured") {
+    return authorizationUnavailable();
+  }
+  if (authorization.status !== "authorized") return handleHostedRequest(request, fetchImpl);
+
+  return handleHostedRequest(request, fetchImpl, {
+    grant: authorization.grant,
+    upstreamToken: route.authMode === "federated"
+      ? authorization.accessToken
+      : productToken(env, route),
+  });
+}
+
 export default {
-  async fetch(request: Request, env: HostedWorkerEnv): Promise<Response> {
-    const fetchImpl: typeof fetch = (input, init) => globalThis.fetch(input, init);
-    const challenge = openAiChallenge(request, env);
-    if (challenge) return challenge;
-    const metadata = await handleOAuthMetadataRequest(request, env, fetchImpl);
-    if (metadata) return metadata;
-
-    const url = new URL(request.url);
-    const route = hostedRoute(url.pathname, url.hostname);
-    if (!route || route.audience === "public") return handleHostedRequest(request, fetchImpl);
-
-    const authorization = await authorizeOAuthRequest(request, route, env);
-    if (authorization.status === "unavailable" || authorization.status === "misconfigured") {
-      return authorizationUnavailable();
-    }
-    if (authorization.status !== "authorized") return handleHostedRequest(request, fetchImpl);
-
-    return handleHostedRequest(request, fetchImpl, {
-      grant: authorization.grant,
-      upstreamToken: route.authMode === "federated"
-        ? authorization.accessToken
-        : productToken(env, route),
-    });
+  async fetch(
+    request: Request,
+    env: HostedWorkerEnv,
+    ctx?: ExecutionContext,
+  ): Promise<Response> {
+    return monitorAppHealthRequest(request, env, ctx, () => handleRequest(request, env));
   },
 } satisfies ExportedHandler<HostedWorkerEnv>;

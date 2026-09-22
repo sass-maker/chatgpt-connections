@@ -28,7 +28,12 @@ export interface OAuthGrantProps {
   scope: string;
 }
 
-export type HostedWorkerEnv = Env & Partial<Record<OpenAIChallengeSecret, string>>;
+export type HostedWorkerEnv = Env &
+  Partial<Record<OpenAIChallengeSecret, string>> & {
+    APP_HEALTH_INGEST_KEY?: string;
+    APP_HEALTH_ENVIRONMENT?: string;
+    APP_HEALTH_RELEASE?: string;
+  };
 
 export type OAuthAuthorizationResult =
   | { status: "authorized"; accessToken: string; grant: OAuthGrantProps }
