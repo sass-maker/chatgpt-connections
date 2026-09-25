@@ -156,6 +156,82 @@ async function boundedResponse(response: Response): Promise<Response> {
   });
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!,
+  );
+}
+
+function landingResponse(): Response {
+  const cards = Object.entries(HOSTED_ROUTES)
+    .map(([path, route]) => {
+      const name = route.kind === "adapter" ? route.app.name : route.serverName;
+      const description =
+        route.kind === "adapter"
+          ? route.app.instructions.split(/(?<=[.!?])\s/)[0] ?? route.app.instructions
+          : `Read-only MCP connection proxied to ${new URL(route.upstreamUrl).hostname}.`;
+      const endpoint = `https://${route.hosts[0]}${path}`;
+      const access = route.audience === "personal" ? "Owner sign-in" : "Public";
+      const status = route.productionStatus === "prepared" ? "prepared" : "live";
+      return `      <li class="card">
+        <div class="card-head"><h2>${escapeHtml(name)}</h2><span class="badge ${route.audience}">${access}</span></div>
+        <p>${escapeHtml(description)}</p>
+        <p class="meta"><code>${escapeHtml(endpoint)}</code><span class="status ${status}">${status}</span></p>
+      </li>`;
+    })
+    .join("\n");
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatGPT Connections — SaaS Maker MCP endpoints</title>
+<meta name="description" content="Hosted read-only MCP connections for ChatGPT and other MCP clients: the list of active endpoints, their audiences, and status.">
+<style>
+:root{--bg:#0c0f0d;--ink:#eef4ef;--muted:#9db3a5;--accent:#6bd29c;--line:rgba(157,179,165,.2);--panel:#11161212}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;line-height:1.55;font-size:16px}
+.shell{width:min(920px,calc(100% - 48px));margin-inline:auto;padding-block:72px}
+h1{font-size:clamp(1.9rem,5vw,2.8rem);letter-spacing:-.03em;margin:0 0 12px}
+.lede{color:var(--muted);max-width:640px;margin:0 0 40px}
+.lede code{color:var(--accent)}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.card{border:1px solid var(--line);border-radius:10px;padding:20px 22px;background:var(--panel)}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+h2{font-size:17px;margin:0;font-weight:650}
+.card p{margin:8px 0 0;color:var(--muted);font-size:14px}
+.meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.meta code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--ink)}
+.badge,.status{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.badge.public{color:var(--accent);border-color:rgba(107,210,156,.4)}
+.badge.personal{color:var(--muted)}
+.status.live{color:var(--accent)}
+.status.prepared{color:#e0ad4c}
+</style>
+</head>
+<body>
+<main class="shell">
+  <h1>ChatGPT Connections</h1>
+  <p class="lede">Hosted read-only MCP endpoints offered by SaaS Maker. Add a connection in ChatGPT with the endpoint URL. <code>Public</code> endpoints need no account; <code>Owner sign-in</code> endpoints are the owner's personal connectors.</p>
+  <ul>
+${cards}
+  </ul>
+</main>
+<script src="https://sassmaker.com/project-strip.js" data-project="chatgpt-connections" defer></script>
+<script src="https://sassmaker.com/ai-chat-footer.js" data-name="ChatGPT Connections" defer></script>
+</body>
+</html>`;
+  return new Response(html, {
+    headers: {
+      "Cache-Control": "public, max-age=300, s-maxage=300",
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Security-Policy":
+        "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; script-src https://sassmaker.com; connect-src https://sassmaker.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 function healthResponse(): Response {
   return Response.json(
     {
@@ -363,6 +439,9 @@ export async function handleHostedRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname === "/health" && request.method === "GET") return healthResponse();
+  if (url.pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
+    return landingResponse();
+  }
 
   const route = hostedRoute(url.pathname, url.hostname);
   if (!route) return withProtocolHeaders(jsonRpcError(404, -32001, "Unknown MCP route."), request);
