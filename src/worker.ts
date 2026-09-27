@@ -7,6 +7,7 @@ import {
   type HostedRouteDefinition,
 } from "./hosted.js";
 import type { HostedWorkerEnv, OAuthGrantProps } from "./oauth.js";
+import { OG_IMAGE_BASE64 } from "./og-image.js";
 import { buildServerForApp, type ToolSecurityScheme } from "./server.js";
 
 const MAX_MCP_REQUEST_BYTES = 256_000;
@@ -162,7 +163,24 @@ function escapeHtml(value: string): string {
   );
 }
 
-function landingResponse(): Response {
+function base64ToBytes(value: string): Uint8Array<ArrayBuffer> {
+  const binary = atob(value);
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function ogImageResponse(): Response {
+  return new Response(new Blob([base64ToBytes(OG_IMAGE_BASE64)], { type: "image/png" }), {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+function landingResponse(url: URL): Response {
   const cards = Object.entries(HOSTED_ROUTES)
     .map(([path, route]) => {
       const name = route.kind === "adapter" ? route.app.name : route.serverName;
@@ -187,6 +205,17 @@ function landingResponse(): Response {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ChatGPT Connections — SaaS Maker MCP endpoints</title>
 <meta name="description" content="Hosted read-only MCP connections for ChatGPT and other MCP clients: the list of active endpoints, their audiences, and status.">
+<link rel="canonical" href="${url.origin}/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChatGPT Connections">
+<meta property="og:title" content="ChatGPT Connections — SaaS Maker MCP endpoints">
+<meta property="og:description" content="Hosted read-only MCP connections for ChatGPT and other MCP clients.">
+<meta property="og:url" content="${url.origin}/">
+<meta property="og:image" content="${url.origin}/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"ChatGPT Connections","url":"${url.origin}/","description":"Hosted read-only MCP connections for ChatGPT and other MCP clients."}
+</script>
 <style>
 :root{--bg:#0c0f0d;--ink:#eef4ef;--muted:#9db3a5;--accent:#6bd29c;--line:rgba(157,179,165,.2);--panel:#11161212}
 *{box-sizing:border-box}
@@ -439,8 +468,11 @@ export async function handleHostedRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname === "/health" && request.method === "GET") return healthResponse();
+  if (url.pathname === "/og-image.png" && request.method === "GET") {
+    return ogImageResponse();
+  }
   if (url.pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
-    return landingResponse();
+    return landingResponse(url);
   }
 
   const route = hostedRoute(url.pathname, url.hostname);
