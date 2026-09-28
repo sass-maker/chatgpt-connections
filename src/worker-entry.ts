@@ -54,6 +54,12 @@ async function handleRequest(request: Request, env: HostedWorkerEnv): Promise<Re
 
   const url = new URL(request.url);
   const route = hostedRoute(url.pathname, url.hostname);
+  if (url.pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
+    return handleHostedRequest(request, fetchImpl, undefined, {
+      key: env.APP_HEALTH_BROWSER_KEY ?? "",
+      projectId: env.APP_HEALTH_BROWSER_PROJECT_ID ?? "",
+    });
+  }
   if (!route || route.audience === "public") return handleHostedRequest(request, fetchImpl);
 
   const authorization = await authorizeOAuthRequest(request, route, env);
