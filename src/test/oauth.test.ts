@@ -270,6 +270,37 @@ test("public endpoint directory disables automatic newsletter capture", async ()
   const policy = response.headers.get("Content-Security-Policy") ?? "";
   assert.match(policy, /connect-src [^;]*https:\/\/api\.sassmaker\.com/u);
   assert.match(policy, /img-src [^;]*blob:/u);
+  assert.doesNotMatch(html, /health\.sassmaker\.com\/tracker\.js/u);
+  assert.doesNotMatch(policy, /ingest\.sassmaker\.com/u);
+});
+
+test("only the configured anonymous directory loads browser analytics", async () => {
+  const trackerEnv = {
+    ...env,
+    APP_HEALTH_BROWSER_KEY: "pk_test_public_browser_key",
+    APP_HEALTH_BROWSER_PROJECT_ID: "app-test-directory",
+  } as HostedWorkerEnv;
+  const root = await worker.fetch(
+    new Request("https://reader-mcp.significanthobbies.com/"),
+    trackerEnv,
+  );
+  const html = await root.text();
+  assert.match(html, /src="https:\/\/health\.sassmaker\.com\/tracker\.js"/u);
+  assert.match(html, /data-key="pk_test_public_browser_key"/u);
+  assert.match(html, /data-project="app-test-directory"/u);
+  assert.match(html, /data-identity="session"/u);
+  assert.match(html, /data-endpoint="https:\/\/ingest\.sassmaker\.com\/v1\/browser"/u);
+  const policy = root.headers.get("Content-Security-Policy") ?? "";
+  assert.match(policy, /script-src [^;]*https:\/\/health\.sassmaker\.com/u);
+  assert.match(policy, /connect-src [^;]*https:\/\/ingest\.sassmaker\.com/u);
+
+  const health = await worker.fetch(new Request("https://reader-mcp.significanthobbies.com/health"), trackerEnv);
+  assert.doesNotMatch(await health.text(), /tracker\.js/u);
+  const incomplete = await worker.fetch(
+    new Request("https://reader-mcp.significanthobbies.com/"),
+    { ...trackerEnv, APP_HEALTH_BROWSER_PROJECT_ID: "" },
+  );
+  assert.doesNotMatch(await incomplete.text(), /tracker\.js/u);
 });
 
 test("OpenAI verification challenges are isolated by branded plugin hostname", async () => {

@@ -33,6 +33,8 @@ export type HostedWorkerEnv = Env &
     APP_HEALTH_INGEST_KEY?: string;
     APP_HEALTH_ENVIRONMENT?: string;
     APP_HEALTH_RELEASE?: string;
+    APP_HEALTH_BROWSER_KEY?: string;
+    APP_HEALTH_BROWSER_PROJECT_ID?: string;
   };
 
 export type OAuthAuthorizationResult =

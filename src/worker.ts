@@ -180,7 +180,12 @@ function ogImageResponse(): Response {
   });
 }
 
-function landingResponse(url: URL): Response {
+type BrowserTracker = { key: string; projectId: string };
+
+function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
+  const tracker = browserTracker?.key.trim() && browserTracker.projectId.trim()
+    ? `<script defer src="https://health.sassmaker.com/tracker.js" data-key="${escapeHtml(browserTracker.key.trim())}" data-project="${escapeHtml(browserTracker.projectId.trim())}" data-identity="session" data-endpoint="https://ingest.sassmaker.com/v1/browser"></script>`
+    : "";
   const cards = Object.entries(HOSTED_ROUTES)
     .map(([path, route]) => {
       const name = route.kind === "adapter" ? route.app.name : route.serverName;
@@ -248,6 +253,7 @@ ${cards}
 </main>
 <script src="https://sassmaker.com/project-strip.js" data-project="chatgpt-connections" defer></script>
 <script src="https://sassmaker.com/ai-chat-footer.js" data-name="ChatGPT Connections" data-capture="false" defer></script>
+${tracker}
 </body>
 </html>`;
   return new Response(html, {
@@ -255,7 +261,7 @@ ${cards}
       "Cache-Control": "public, max-age=300, s-maxage=300",
       "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy":
-        "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; script-src https://sassmaker.com; connect-src https://sassmaker.com https://api.sassmaker.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; script-src https://sassmaker.com${tracker ? " https://health.sassmaker.com" : ""}; connect-src https://sassmaker.com https://api.sassmaker.com${tracker ? " https://ingest.sassmaker.com" : ""}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
       "X-Content-Type-Options": "nosniff",
     },
   });
@@ -465,6 +471,7 @@ export async function handleHostedRequest(
   request: Request,
   fetchImpl: typeof fetch = fetch,
   authorization?: HostedRequestAuthorization,
+  browserTracker?: BrowserTracker,
 ): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname === "/health" && request.method === "GET") return healthResponse();
@@ -472,7 +479,7 @@ export async function handleHostedRequest(
     return ogImageResponse();
   }
   if (url.pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
-    return landingResponse(url);
+    return landingResponse(url, browserTracker);
   }
 
   const route = hostedRoute(url.pathname, url.hostname);
