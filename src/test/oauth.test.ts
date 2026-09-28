@@ -259,6 +259,16 @@ test("Worker entrypoint invokes the runtime fetch with its global receiver", asy
   }
 });
 
+test("public endpoint directory disables automatic newsletter capture", async () => {
+  const response = await worker.fetch(
+    new Request("https://reader-mcp.significanthobbies.com/"),
+    env as Env,
+  );
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /ai-chat-footer\.js[^>]*data-capture="false"/u);
+});
+
 test("OpenAI verification challenges are isolated by branded plugin hostname", async () => {
   const challengeEnv = {
     ...env,
