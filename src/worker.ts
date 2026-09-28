@@ -247,7 +247,7 @@ ${cards}
   </ul>
 </main>
 <script src="https://sassmaker.com/project-strip.js" data-project="chatgpt-connections" defer></script>
-<script src="https://sassmaker.com/ai-chat-footer.js" data-name="ChatGPT Connections" defer></script>
+<script src="https://sassmaker.com/ai-chat-footer.js" data-name="ChatGPT Connections" data-capture="false" defer></script>
 </body>
 </html>`;
   return new Response(html, {
