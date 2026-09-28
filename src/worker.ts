@@ -255,7 +255,7 @@ ${cards}
       "Cache-Control": "public, max-age=300, s-maxage=300",
       "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy":
-        "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; script-src https://sassmaker.com; connect-src https://sassmaker.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; script-src https://sassmaker.com; connect-src https://sassmaker.com https://api.sassmaker.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
       "X-Content-Type-Options": "nosniff",
     },
   });
