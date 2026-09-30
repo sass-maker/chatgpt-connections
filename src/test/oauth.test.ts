@@ -278,16 +278,16 @@ test("only the configured anonymous directory loads browser analytics", async ()
   const trackerEnv = {
     ...env,
     APP_HEALTH_BROWSER_KEY: "pk_test_public_browser_key",
-    APP_HEALTH_BROWSER_PROJECT_ID: "app-test-directory",
   } as HostedWorkerEnv;
   const root = await worker.fetch(
     new Request("https://reader-mcp.significanthobbies.com/"),
     trackerEnv,
   );
   const html = await root.text();
+  assert.equal((html.match(/health\.sassmaker\.com\/tracker\.js/gu) ?? []).length, 1);
   assert.match(html, /src="https:\/\/health\.sassmaker\.com\/tracker\.js"/u);
   assert.match(html, /data-key="pk_test_public_browser_key"/u);
-  assert.match(html, /data-project="app-test-directory"/u);
+  assert.match(html, /data-project="app-69c3e3a1-270b-49c0-a31f-9fc1c71ef97f"/u);
   assert.match(html, /data-identity="session"/u);
   assert.match(html, /data-endpoint="https:\/\/ingest\.sassmaker\.com\/v1\/browser"/u);
   const policy = root.headers.get("Content-Security-Policy") ?? "";
@@ -298,9 +298,10 @@ test("only the configured anonymous directory loads browser analytics", async ()
   assert.doesNotMatch(await health.text(), /tracker\.js/u);
   const incomplete = await worker.fetch(
     new Request("https://reader-mcp.significanthobbies.com/"),
-    { ...trackerEnv, APP_HEALTH_BROWSER_PROJECT_ID: "" },
+    { ...trackerEnv, APP_HEALTH_BROWSER_KEY: "" },
   );
   assert.doesNotMatch(await incomplete.text(), /tracker\.js/u);
+  assert.doesNotMatch(incomplete.headers.get("Content-Security-Policy") ?? "", /ingest\.sassmaker\.com/u);
 });
 
 test("OpenAI verification challenges are isolated by branded plugin hostname", async () => {

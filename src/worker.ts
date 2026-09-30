@@ -180,11 +180,14 @@ function ogImageResponse(): Response {
   });
 }
 
-type BrowserTracker = { key: string; projectId: string };
+type BrowserTracker = { key: string };
+
+// App Health project scope is the canonical production app UUID, not an independently configurable Worker value.
+const APP_HEALTH_PROJECT_ID = "app-69c3e3a1-270b-49c0-a31f-9fc1c71ef97f";
 
 function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
-  const tracker = browserTracker?.key.trim() && browserTracker.projectId.trim()
-    ? `<script defer src="https://health.sassmaker.com/tracker.js" data-key="${escapeHtml(browserTracker.key.trim())}" data-project="${escapeHtml(browserTracker.projectId.trim())}" data-identity="session" data-endpoint="https://ingest.sassmaker.com/v1/browser"></script>`
+  const tracker = browserTracker?.key.trim()
+    ? `<script defer src="https://health.sassmaker.com/tracker.js" data-key="${escapeHtml(browserTracker.key.trim())}" data-project="${APP_HEALTH_PROJECT_ID}" data-identity="session" data-endpoint="https://ingest.sassmaker.com/v1/browser"></script>`
     : "";
   const cards = Object.entries(HOSTED_ROUTES)
     .map(([path, route]) => {
