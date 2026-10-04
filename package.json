@@ -2,6 +2,7 @@
   "name": "@sass-maker/chatgpt-connections",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.2",
   "type": "module",
   "description": "Read-only MCP adapters for selected Fleet applications",
   "engines": {

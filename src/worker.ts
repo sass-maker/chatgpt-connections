@@ -7,6 +7,7 @@ import {
   type HostedRouteDefinition,
 } from "./hosted.js";
 import type { HostedWorkerEnv, OAuthGrantProps } from "./oauth.js";
+import { footerAssetResponse } from "./footer-assets.js";
 import { OG_IMAGE_BASE64 } from "./og-image.js";
 import { buildServerForApp, type ToolSecurityScheme } from "./server.js";
 
@@ -163,6 +164,10 @@ function escapeHtml(value: string): string {
   );
 }
 
+function connectionAnchor(path: string): string {
+  return `connection-${path.replace(/^\/+|\/+$/gu, "").replace(/[^a-z0-9]+/giu, "-")}`;
+}
+
 function base64ToBytes(value: string): Uint8Array<ArrayBuffer> {
   const binary = atob(value);
   const bytes = new Uint8Array(new ArrayBuffer(binary.length));
@@ -199,13 +204,19 @@ function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
       const endpoint = `https://${route.hosts[0]}${path}`;
       const access = route.audience === "personal" ? "Owner sign-in" : "Public";
       const status = route.productionStatus === "prepared" ? "prepared" : "live";
-      return `      <li class="card">
+      return `      <li class="card" id="${connectionAnchor(path)}">
         <div class="card-head"><h2>${escapeHtml(name)}</h2><span class="badge ${route.audience}">${access}</span></div>
         <p>${escapeHtml(description)}</p>
         <p class="meta"><code>${escapeHtml(endpoint)}</code><span class="status ${status}">${status}</span></p>
       </li>`;
     })
     .join("\n");
+  const footerLinks = Object.entries(HOSTED_ROUTES)
+    .map(([path, route]) => {
+      const name = route.kind === "adapter" ? route.app.name : route.serverName;
+      return `<li><a href="#${connectionAnchor(path)}">${escapeHtml(name)}</a></li>`;
+    })
+    .join("\n      ");
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -236,6 +247,8 @@ ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .card{border:1px solid var(--line);border-radius:10px;padding:20px 22px;background:var(--panel)}
 .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
 h2{font-size:17px;margin:0;font-weight:650}
+.connections-footer-links{display:flex;flex-wrap:wrap;gap:.5rem 1rem;margin:0;padding:0;list-style:none}
+.connections-footer-links a{color:inherit;font-size:.8rem;text-underline-offset:.25em}
 .card p{margin:8px 0 0;color:var(--muted);font-size:14px}
 .meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .meta code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--ink)}
@@ -250,12 +263,17 @@ h2{font-size:17px;margin:0;font-weight:650}
 <main class="shell">
   <h1>ChatGPT Connections</h1>
   <p class="lede">Hosted read-only MCP endpoints offered by SaaS Maker. Add a connection in ChatGPT with the endpoint URL. <code>Public</code> endpoints need no account; <code>Owner sign-in</code> endpoints are the owner's personal connectors.</p>
-  <ul>
+  <ul id="connections">
 ${cards}
   </ul>
 </main>
-<script src="https://sassmaker.com/project-strip.js" data-project="chatgpt-connections" defer></script>
-<script src="https://sassmaker.com/ai-chat-footer.js" data-name="ChatGPT Connections" data-capture="false" defer></script>
+<fleet-footer-extension data-fleet-footer-project="chatgpt-connections" product-name="ChatGPT Connections" theme="dark" font-base="${url.origin}/fonts/fleet-footer-precise-v1/" art-src="${url.origin}/footer-art/chatgpt-connections.webp" art-alt="Two green-stone alcoves joined by a quiet central connection desk." art-width="2172" art-height="724" art-position="50% 50%" art-credit="Connections original artwork">
+  <nav slot="navigation" data-fleet-footer-navigation aria-label="Browse connections"><ul class="connections-footer-links">
+      ${footerLinks}
+  </ul></nav>
+</fleet-footer-extension>
+<script src="https://sassmaker.com/project-strip.js?v=precise-b0adaa67" data-project="chatgpt-connections" data-host-only="true" theme="dark" defer></script>
+<script src="https://sassmaker.com/ai-chat-footer.js?v=precise-b0adaa67" data-name="ChatGPT Connections" data-project="chatgpt-connections" data-host-only="true" theme="dark" data-capture="false" defer></script>
 ${tracker}
 </body>
 </html>`;
@@ -264,7 +282,7 @@ ${tracker}
       "Cache-Control": "public, max-age=300, s-maxage=300",
       "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy":
-        `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; script-src https://sassmaker.com${tracker ? " https://health.sassmaker.com" : ""}; connect-src https://sassmaker.com https://api.sassmaker.com${tracker ? " https://ingest.sassmaker.com" : ""}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+        `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; script-src https://sassmaker.com${tracker ? " https://health.sassmaker.com" : ""}; connect-src https://sassmaker.com https://api.sassmaker.com${tracker ? " https://ingest.sassmaker.com" : ""}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
       "X-Content-Type-Options": "nosniff",
     },
   });
@@ -477,6 +495,8 @@ export async function handleHostedRequest(
   browserTracker?: BrowserTracker,
 ): Promise<Response> {
   const url = new URL(request.url);
+  const footerAsset = footerAssetResponse(request);
+  if (footerAsset) return footerAsset;
   if (url.pathname === "/health" && request.method === "GET") return healthResponse();
   if (url.pathname === "/og-image.png" && request.method === "GET") {
     return ogImageResponse();

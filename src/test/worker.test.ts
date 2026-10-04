@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import { HOSTED_ROUTES, oauthResource, type HostedRouteDefinition } from "../hosted.js";
@@ -480,6 +481,97 @@ test("branded hosts expose only their assigned plugin routes", async () => {
   );
   assert.equal(allowed.status, 200);
   assert.equal(isolated.status, 404);
+});
+
+test("C Precise landing preserves existing endpoint cards and adds native footer navigation", async () => {
+  const response = await handleHostedRequest(new Request("https://reader-mcp.significanthobbies.com/"));
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<fleet-footer-extension[^>]*font-base="https:\/\/reader-mcp\.significanthobbies\.com\/fonts\/fleet-footer-precise-v1\//u);
+  assert.match(html, /art-src="https:\/\/reader-mcp\.significanthobbies\.com\/footer-art\/chatgpt-connections\.webp"/u);
+  assert.match(html, /<fleet-footer-extension[^>]*data-fleet-footer-project="chatgpt-connections"[^>]*theme="dark"/u);
+  assert.match(html, /data-fleet-footer-navigation aria-label="Browse connections"/u);
+  assert.match(html, /<nav slot="navigation"/u);
+  assert.match(html, /project-strip\.js\?v=precise-b0adaa67[^>]*data-project="chatgpt-connections"[^>]*data-host-only="true"[^>]*theme="dark"/u);
+  assert.match(html, /ai-chat-footer\.js\?v=precise-b0adaa67[^>]*data-project="chatgpt-connections"[^>]*data-host-only="true"[^>]*theme="dark"[^>]*data-capture="false"/u);
+  assert.equal((html.match(/<li><a href="#connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
+  assert.equal((html.match(/<li class="card" id="connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
+  assert.equal((html.match(/<a href="#connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
+  assert.match(html, /ai-chat-footer\.js[^>]*data-capture="false"/u);
+  assert.match(html, /project-strip\.js[^>]*data-project="chatgpt-connections"/u);
+  assert.equal(
+    response.headers.get("Content-Security-Policy"),
+    "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; " +
+      "script-src https://sassmaker.com; connect-src https://sassmaker.com https://api.sassmaker.com; " +
+      "base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  );
+});
+
+test("Connections original art route serves the approved WebP bytes with safe headers", async () => {
+  const response = await handleHostedRequest(
+    new Request("https://reader-mcp.significanthobbies.com/footer-art/chatgpt-connections.webp"),
+  );
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "image/webp");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("cross-origin-resource-policy"), "same-origin");
+  assert.equal(response.headers.get("content-length"), "176184");
+  assert.equal(
+    createHash("sha256").update(new Uint8Array(await response.arrayBuffer())).digest("hex"),
+    "e50bddb84c098f150d62656e06f38319b9436cdbb2541bfa77efa066f69d311e",
+  );
+
+  const head = await handleHostedRequest(
+    new Request("https://reader-mcp.significanthobbies.com/footer-art/chatgpt-connections.webp", { method: "HEAD" }),
+  );
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get("content-length"), "176184");
+  assert.equal(await head.text(), "");
+});
+
+test("Precise local font assets include exact source bytes, licenses, and provenance", async () => {
+  const expected = [
+    ["geist.woff2", "font/woff2", "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1"],
+    ["geistmono.woff2", "font/woff2", "3f98383b122fe015a48536cd4a1cda855a201718923ffe74931a01597107b9b5"],
+    ["newsreader.woff2", "font/woff2", "6e4f2958c3a7c4a80acde4e5a679abe7e01bc1e30b92be3c7a8b696ef401d101"],
+    ["geist-OFL.txt", "text/plain", "1781d2806a07d91c4edf4740b88449fab7d0eadad53f7c351b94cd4d4eb8c00f"],
+    ["geistmono-OFL.txt", "text/plain", "1781d2806a07d91c4edf4740b88449fab7d0eadad53f7c351b94cd4d4eb8c00f"],
+    ["newsreader-OFL.txt", "text/plain", "fdfad38143ec470553cae82a1e45320bdd1b9ec70415d37bd0171051d8a4ded8"],
+    ["provenance.json", "application/json", "c97362ecb4865f119caa9725ac0fa777d57d43f87898777b4fbd844247a96ccb"],
+    ["README.md", "text/markdown", "ffeed133d48f9e85a619f2d973c9b0e6071b0a77e1779e7db6038a5c31dfc46c"],
+  ] as const;
+  for (const [name, contentType, sha256] of expected) {
+    const path = `/fonts/fleet-footer-precise-v1/${name}`;
+    const response = await handleHostedRequest(
+      new Request(`https://reader-mcp.significanthobbies.com${path}`),
+    );
+    assert.equal(response.status, 200, path);
+    assert.equal(response.headers.get("content-type")?.split(";", 1)[0], contentType, path);
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff", path);
+    assert.equal(response.headers.get("cross-origin-resource-policy"), "same-origin", path);
+    assert.equal(
+      createHash("sha256").update(new Uint8Array(await response.arrayBuffer())).digest("hex"),
+      sha256,
+      path,
+    );
+  }
+
+  const head = await handleHostedRequest(
+    new Request("https://reader-mcp.significanthobbies.com/fonts/fleet-footer-precise-v1/geist.woff2", { method: "HEAD" }),
+  );
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get("content-length"), "29400");
+  assert.equal(await head.text(), "");
+
+  const unknown = await handleHostedRequest(
+    new Request("https://reader-mcp.significanthobbies.com/fonts/fleet-footer-precise-v1/other.woff2"),
+  );
+  assert.equal(unknown.status, 404);
+  const post = await handleHostedRequest(
+    new Request("https://reader-mcp.significanthobbies.com/fonts/fleet-footer-precise-v1/geist.woff2", { method: "POST" }),
+  );
+  assert.equal(post.status, 405);
+  assert.equal(post.headers.get("allow"), "GET, HEAD");
 });
 
 test("Anime List proxy rejects upstream redirects without forwarding them", async () => {
