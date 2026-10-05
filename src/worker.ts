@@ -214,7 +214,12 @@ function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
   const footerLinks = Object.entries(HOSTED_ROUTES)
     .map(([path, route]) => {
       const name = route.kind === "adapter" ? route.app.name : route.serverName;
-      return `<li><a href="#${connectionAnchor(path)}">${escapeHtml(name)}</a></li>`;
+      const footerLabel = {
+        "/personal-apps/mcp": "Personal apps",
+        "/anime-list/mcp": "Anime list",
+        "/anime-list-public/mcp": "Public anime list",
+      }[path] ?? name;
+      return `<li><a href="#${connectionAnchor(path)}">${escapeHtml(footerLabel)}</a></li>`;
     })
     .join("\n      ");
   const html = `<!doctype html>
