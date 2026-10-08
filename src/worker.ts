@@ -7,6 +7,7 @@ import {
   type HostedRouteDefinition,
 } from "./hosted.js";
 import type { HostedWorkerEnv, OAuthGrantProps } from "./oauth.js";
+import { FOOTER_ART_BASE64 } from "./footer-art.js";
 import { OG_IMAGE_BASE64 } from "./og-image.js";
 import { buildServerForApp, type ToolSecurityScheme } from "./server.js";
 
@@ -254,6 +255,8 @@ h2{font-size:17px;margin:0;font-weight:650}
 ${cards}
   </ul>
 </main>
+<fleet-footer-extension product-name="ChatGPT Connections" art-src="/footer-art/chatgpt-connections.webp" surface="app" art-alt="ChatGPT Connections: A bounded reading bridge centers one inspectable aperture and selected source folio. Closed source compartments stay behind a clear boundary; a one-direction viewing rail communicates limited reading access." art-width="2170" art-height="725" art-position="50% 50%" art-credit="Original illustration for ChatGPT Connections">
+</fleet-footer-extension>
 <script src="https://sassmaker.com/project-strip.js" data-project="chatgpt-connections" defer></script>
 <script src="https://sassmaker.com/ai-chat-footer.js" data-name="ChatGPT Connections" data-capture="false" defer></script>
 ${tracker}
@@ -477,6 +480,18 @@ export async function handleHostedRequest(
   browserTracker?: BrowserTracker,
 ): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === "/footer-art/chatgpt-connections.webp" &&
+    (request.method === "GET" || request.method === "HEAD")) {
+    const image = base64ToBytes(FOOTER_ART_BASE64);
+    return new Response(request.method === "HEAD" ? null : image, {
+      headers: {
+        "Content-Type": "image/webp",
+        "Content-Length": String(image.byteLength),
+        "Cache-Control": "public, max-age=86400",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
   if (url.pathname === "/health" && request.method === "GET") return healthResponse();
   if (url.pathname === "/og-image.png" && request.method === "GET") {
     return ogImageResponse();
