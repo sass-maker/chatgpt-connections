@@ -239,7 +239,7 @@ function landingRowHtml(row: LandingRow, index: number): string {
 
 function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
   const tracker = browserTracker?.key.trim()
-    ? `<script defer src="https://health.sassmaker.com/tracker.js" data-key="${escapeHtml(browserTracker.key.trim())}" data-project="${APP_HEALTH_PROJECT_ID}" data-identity="session" data-endpoint="https://ingest.sassmaker.com/v1/browser"></script>`
+    ? `<script defer src="https://health.sassmaker.com/tracker.js" data-key="${escapeHtml(browserTracker.key.trim())}" data-project="${APP_HEALTH_PROJECT_ID}" data-identity="session" data-endpoint="https://ingest.sassmaker.com/v1/browser" data-vitals></script>`
     : "";
   const rows = landingRows();
   const byStatus = (list: LandingRow[]) => [...list.filter((row) => row.status === "live"), ...list.filter((row) => row.status !== "live")];
@@ -266,6 +266,7 @@ function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
 <meta name="description" content="Hosted read-only MCP connections for ChatGPT and other MCP clients: the list of active endpoints, their audiences, and status.">
 <meta name="theme-color" content="#0c0f0d">
 <link rel="canonical" href="${url.origin}/">
+<link rel="icon" href="data:,">
 <link rel="preload" href="${fonts}/geist.woff2" as="font" type="font/woff2" crossorigin>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ChatGPT Connections">

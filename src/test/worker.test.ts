@@ -8,6 +8,15 @@ import { handleHostedRequest } from "../worker.js";
 
 const protocolVersion = "2025-11-25";
 
+test("landing enables browser vitals and supplies an empty data favicon", async () => {
+  const response = await handleHostedRequest(
+    new Request("https://mcp.example/"), routeFetch, undefined, { key: "browser-test-key" },
+  );
+  const html = await response.text();
+  assert.match(html, /<script defer src="https:\/\/health\.sassmaker\.com\/tracker\.js"[^>]* data-vitals><\/script>/u);
+  assert.match(html, /<link rel="icon" href="data:,">/u);
+});
+
 function requestFor(
   path: string,
   body: unknown,
