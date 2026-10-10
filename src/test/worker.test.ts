@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 
 import { HOSTED_ROUTES, oauthResource, type HostedRouteDefinition } from "../hosted.js";
 import type { OAuthGrantProps } from "../oauth.js";
@@ -15,6 +16,8 @@ test("landing enables browser vitals and supplies an empty data favicon", async 
   const html = await response.text();
   assert.match(html, /<script defer src="https:\/\/health\.sassmaker\.com\/tracker\.js"[^>]* data-vitals><\/script>/u);
   assert.match(html, /<link rel="icon" href="data:,">/u);
+  assert.match(response.headers.get("Content-Security-Policy") ?? "", /script-src 'self' https:\/\/health\.sassmaker\.com;/u);
+  assert.match(response.headers.get("Content-Security-Policy") ?? "", /connect-src https:\/\/sassmaker\.com https:\/\/api\.sassmaker\.com https:\/\/ingest\.sassmaker\.com;/u);
 });
 
 function requestFor(
@@ -492,29 +495,53 @@ test("branded hosts expose only their assigned plugin routes", async () => {
   assert.equal(isolated.status, 404);
 });
 
-test("C Precise landing preserves existing endpoint cards and adds native footer navigation", async () => {
+test("Studio landing preserves endpoint cards and adds bundled footer navigation", async () => {
   const response = await handleHostedRequest(new Request("https://reader-mcp.significanthobbies.com/"));
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /<fleet-footer-extension[^>]*font-base="https:\/\/reader-mcp\.significanthobbies\.com\/fonts\/fleet-footer-precise-v1\//u);
-  assert.match(html, /art-src="https:\/\/reader-mcp\.significanthobbies\.com\/footer-art\/chatgpt-connections\.webp"/u);
-  assert.match(html, /<fleet-footer-extension[^>]*data-fleet-footer-project="chatgpt-connections"[^>]*theme="dark"/u);
-  assert.match(html, /data-fleet-footer-navigation aria-label="Browse connections"/u);
-  assert.match(html, /<nav slot="navigation"/u);
-  assert.match(html, /project-strip\.js\?v=precise-b0adaa67[^>]*data-project="chatgpt-connections"[^>]*data-host-only="true"[^>]*theme="dark"/u);
-  assert.match(html, /ai-chat-footer\.js\?v=precise-b0adaa67[^>]*data-project="chatgpt-connections"[^>]*data-host-only="true"[^>]*theme="dark"[^>]*data-capture="false"/u);
-  assert.equal((html.match(/<li><a href="#connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
+  assert.match(html, /<studio-footer data-mode="dark">/u);
+  assert.match(html, /<footer data-fleet-footer="studio" data-catalog-id="chatgpt-connections"/u);
+  assert.match(html, /src="https:\/\/reader-mcp\.significanthobbies\.com\/footer-art\/chatgpt-connections\.webp"/u);
+  assert.match(html, /<link rel="stylesheet" href="\/footer.css">/u);
+  assert.match(html, /<script type="module" src="\/footer.js"><\/script>/u);
+  assert.doesNotMatch(html, /fleet-footer-extension|sassmaker\.com\/project-strip\.js|ai-chat-footer\.js|data-subscribe/u);
+  const navigation = html.match(/<nav aria-label="Footer"[\s\S]*?<\/nav>/u)?.[0] ?? "";
+  assert.match(navigation, /browse connections/u);
+  assert.equal((navigation.match(/href="#connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
   assert.equal((html.match(/<li class="card" id="connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
-  assert.equal((html.match(/<a href="#connection-/gu) ?? []).length, Object.keys(HOSTED_ROUTES).length);
-  assert.match(html, /ai-chat-footer\.js[^>]*data-capture="false"/u);
-  assert.match(html, /project-strip\.js[^>]*data-project="chatgpt-connections"/u);
   assert.equal(
     response.headers.get("Content-Security-Policy"),
-    "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; " +
-      "script-src https://sassmaker.com; connect-src https://sassmaker.com https://api.sassmaker.com; " +
+    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; " +
+      "script-src 'self'; connect-src https://sassmaker.com https://api.sassmaker.com; " +
       "base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
   );
 });
+
+for (const [name, contentType] of [
+  ["footer.css", "text/css; charset=utf-8"],
+  ["footer.js", "text/javascript; charset=utf-8"],
+]) {
+  test(`${name} serves installed library bytes with safe GET/HEAD semantics`, async () => {
+    const url = `https://mcp.example/${name}`;
+    const response = await handleHostedRequest(new Request(url));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Content-Type"), contentType);
+    assert.equal(response.headers.get("Cache-Control"), "public, max-age=300");
+    assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
+    assert.equal(response.headers.get("Cross-Origin-Resource-Policy"), "same-origin");
+    const expected = await readFile(new URL(`../../node_modules/@saas-maker/ui/${name}`, import.meta.url));
+    const actual = Buffer.from(await response.arrayBuffer());
+    assert.equal(createHash("sha256").update(actual).digest("hex"), createHash("sha256").update(expected).digest("hex"));
+    const head = await handleHostedRequest(new Request(url, { method: "HEAD" }));
+    assert.equal(head.status, 200);
+    assert.equal(head.headers.get("Content-Type"), contentType);
+    assert.equal(head.headers.get("Content-Length"), String(expected.length));
+    assert.equal(await head.text(), "");
+    const post = await handleHostedRequest(new Request(url, { method: "POST" }));
+    assert.equal(post.status, 405);
+    assert.equal(post.headers.get("Allow"), "GET, HEAD");
+  });
+}
 
 test("Connections original art route serves the approved WebP bytes with safe headers", async () => {
   const response = await handleHostedRequest(

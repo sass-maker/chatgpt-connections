@@ -31,6 +31,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "@saas-maker/app-health": "https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz",
+    "@saas-maker/ui": "github:sass-maker/ui-library#v0.1.15&path:/packages/ui",
     "jose": "6.2.8",
     "zod": "4.4.3"
   },
