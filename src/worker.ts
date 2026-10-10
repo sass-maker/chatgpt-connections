@@ -1,3 +1,4 @@
+import { renderStudioFooterHtml } from "@saas-maker/ui/footer-html";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 import {
@@ -253,9 +254,21 @@ function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
     .filter((row) => row.status === "live")
     .map((row) => `<li class="${row.audience}"><i class="dot live"></i>${escapeHtml(row.name)}</li>`)
     .join("");
-  const footerLinks = rows
-    .map((row) => `<li><a href="#${connectionAnchor(row.path)}">${escapeHtml(row.name)}</a></li>`)
-    .join("\n      ");
+  const footerLinks = rows.map((row) => ({ label: row.name, href: `#${connectionAnchor(row.path)}` }));
+  const footer = renderStudioFooterHtml({
+    product: "ChatGPT Connections",
+    url: url.origin,
+    catalogId: "chatgpt-connections",
+    capture: false,
+    variant: "studio",
+    summary: "Read-only MCP connections for ChatGPT and other MCP clients.",
+    groups: [{ title: "browse connections", links: footerLinks }],
+    art: {
+      src: `${url.origin}/footer-art/chatgpt-connections.webp`,
+      alt: "Two green-stone alcoves joined by a quiet central connection desk.",
+      position: "50% 50%",
+    },
+  });
   const fonts = `${url.origin}/fonts/fleet-footer-precise-v1`;
   const html = `<!doctype html>
 <html lang="en">
@@ -267,6 +280,7 @@ function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
 <meta name="theme-color" content="#0c0f0d">
 <link rel="canonical" href="${url.origin}/">
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="/footer.css">
 <link rel="preload" href="${fonts}/geist.woff2" as="font" type="font/woff2" crossorigin>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ChatGPT Connections">
@@ -286,10 +300,10 @@ function landingResponse(url: URL, browserTracker?: BrowserTracker): Response {
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-a{color:inherit}
-code{font-family:var(--mono)}
+.topbar a,main a{color:inherit}
+main code{font-family:var(--mono)}
 .wrap{width:min(1180px,calc(100% - 64px));margin-inline:auto}
-.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0}
+main .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0}
 .skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:12px;background:var(--ink);color:var(--bg);padding:8px 12px;z-index:5}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
 /* nav */
@@ -302,8 +316,8 @@ code{font-family:var(--mono)}
 /* hero */
 .hero{position:relative;padding:88px 0 96px;border-bottom:1px solid var(--line);background:radial-gradient(60% 70% at 78% 40%,rgba(107,210,156,.09),transparent 70%)}
 .hero .wrap{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:72px;align-items:center}
-h1{font-size:clamp(2.75rem,6.2vw,5.4rem);line-height:.96;letter-spacing:-.045em;font-weight:620;margin:22px 0 26px;text-wrap:balance}
-h1 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em;color:var(--accent)}
+main h1{font-size:clamp(2.75rem,6.2vw,5.4rem);line-height:.96;letter-spacing:-.045em;font-weight:620;margin:22px 0 26px;text-wrap:balance}
+main h1 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em;color:var(--accent)}
 .lede{color:var(--muted);font-size:clamp(1.05rem,1.4vw,1.2rem);line-height:1.6;max-width:34em;margin:0 0 36px}
 .lede strong{color:var(--ink);font-weight:500}
 .actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px}
@@ -341,7 +355,7 @@ h1 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
 .dot.live{background:var(--accent);box-shadow:0 0 0 3px rgba(107,210,156,.14)}
 .dot.prepared{background:var(--amber);box-shadow:0 0 0 3px rgba(224,173,76,.14)}
-figcaption{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:14px;letter-spacing:.03em}
+main figcaption{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:14px;letter-spacing:.03em}
 /* steps */
 .steps{border-bottom:1px solid var(--line)}
 .steps ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr)}
@@ -354,8 +368,8 @@ figcaption{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:
 /* directory */
 .directory{padding:112px 0 40px}
 .dir-head{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:48px;align-items:end;margin-bottom:64px}
-h2{font-size:clamp(2.3rem,4.8vw,4rem);line-height:1;letter-spacing:-.045em;font-weight:620;margin:18px 0 0;text-wrap:balance}
-h2 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em;color:var(--accent)}
+main h2{font-size:clamp(2.3rem,4.8vw,4rem);line-height:1;letter-spacing:-.045em;font-weight:620;margin:18px 0 0;text-wrap:balance}
+main h2 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em;color:var(--accent)}
 .dir-head p{color:var(--muted);margin:0;font-size:16px;max-width:28em}
 .group{margin-bottom:72px}
 .group-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding-bottom:14px;border-bottom:1px solid var(--line-strong)}
@@ -383,8 +397,6 @@ h2 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:
 .boundary ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:0 32px}
 .boundary li{padding:16px 0;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
 .boundary li b{display:block;color:var(--ink);font-weight:550;margin-bottom:2px}
-.connections-footer-links{display:flex;flex-wrap:wrap;gap:.5rem 1rem;margin:0;padding:0;list-style:none}
-.connections-footer-links a{color:inherit;font-size:.8rem;text-underline-offset:.25em}
 @media (max-width:980px){
   .hero .wrap{grid-template-columns:1fr;gap:56px}
   .dir-head,.boundary .panel{grid-template-columns:1fr;gap:20px}
@@ -395,7 +407,7 @@ h2 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:
   .wrap{width:calc(100% - 32px)}
   .nav a:not(:first-child){display:none}
   .hero{padding:56px 0 64px}
-  h1{margin:18px 0 20px}
+  main h1{margin:18px 0 20px}
   .diagram{padding:16px;border-radius:18px}
   .lanes{grid-template-columns:1fr}
   .steps ol{grid-template-columns:1fr}
@@ -413,6 +425,9 @@ h2 em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:
   .boundary ul{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.wire .flow{animation:none}.btn{transition:none}}
+/* Keep the static footer in the page's green palette and font system. */
+studio-footer{--font-display:var(--sans);--font-text:var(--sans);--font-sans:var(--sans);--background:var(--bg);--surface:var(--bg-2);--card:var(--panel);--foreground:var(--ink);--muted-foreground:var(--muted);--border:var(--line);--brand:#6bd29c;--brand-ink:#6bd29c;--brand-soft:#1a3325;--accent:#1a3325}
+studio-footer nav[aria-label="Footer"]>div{grid-column:1/-1}studio-footer nav[aria-label="Footer"] ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(10rem,1fr));gap:.6rem 1.5rem}studio-footer p[aria-hidden="true"].select-none{line-height:1.05;padding-bottom:.04em}studio-footer input,studio-footer textarea{min-width:0;max-width:100%}
 </style>
 </head>
 <body>
@@ -534,13 +549,8 @@ ${personalCards}
     </div>
   </section>
 </main>
-<fleet-footer-extension data-fleet-footer-project="chatgpt-connections" product-name="ChatGPT Connections" theme="dark" font-base="${url.origin}/fonts/fleet-footer-precise-v1/" art-src="${url.origin}/footer-art/chatgpt-connections.webp" art-alt="Two green-stone alcoves joined by a quiet central connection desk." art-width="2172" art-height="724" art-position="50% 50%" art-credit="Connections original artwork">
-  <nav slot="navigation" data-fleet-footer-navigation aria-label="Browse connections"><ul class="connections-footer-links">
-      ${footerLinks}
-  </ul></nav>
-</fleet-footer-extension>
-<script src="https://sassmaker.com/project-strip.js?v=precise-b0adaa67" data-project="chatgpt-connections" data-host-only="true" theme="dark" defer></script>
-<script src="https://sassmaker.com/ai-chat-footer.js?v=precise-b0adaa67" data-name="ChatGPT Connections" data-project="chatgpt-connections" data-host-only="true" theme="dark" data-capture="false" defer></script>
+<studio-footer data-mode="dark">${footer}</studio-footer>
+<script type="module" src="/footer.js"></script>
 ${tracker}
 </body>
 </html>`;
@@ -549,7 +559,7 @@ ${tracker}
       "Cache-Control": "public, max-age=300, s-maxage=300",
       "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy":
-        `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; script-src https://sassmaker.com${tracker ? " https://health.sassmaker.com" : ""}; connect-src https://sassmaker.com https://api.sassmaker.com${tracker ? " https://ingest.sassmaker.com" : ""}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+        `default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; script-src 'self'${tracker ? " https://health.sassmaker.com" : ""}; connect-src https://sassmaker.com https://api.sassmaker.com${tracker ? " https://ingest.sassmaker.com" : ""}; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
       "X-Content-Type-Options": "nosniff",
     },
   });

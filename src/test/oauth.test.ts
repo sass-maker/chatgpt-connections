@@ -266,7 +266,8 @@ test("public endpoint directory disables automatic newsletter capture", async ()
   );
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /ai-chat-footer\.js[^>]*data-capture="false"/u);
+  assert.match(html, /<footer data-fleet-footer="studio" data-catalog-id="chatgpt-connections"/u);
+  assert.doesNotMatch(html, /data-subscribe/u);
   const policy = response.headers.get("Content-Security-Policy") ?? "";
   assert.match(policy, /connect-src [^;]*https:\/\/api\.sassmaker\.com/u);
   assert.match(policy, /img-src [^;]*blob:/u);
